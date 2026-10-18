@@ -115,3 +115,11 @@ admin:
   not-banned: "<gray><id> 没有被禁用</gray>"
   bans: "<white>禁用列表：</white><gray><list></gray>"
   bans-empty: "<gray>禁用列表为空</gray>"
+  import:
+    no-source: "<red>没有找到 FeatherMorph 数据目录：<path></red>"
+    previewing: "<gray>正在读取 FeatherMorph 数据（预览，不会写入）…</gray>"
+    started: "<gray>正在导入 FeatherMorph 数据…</gray>"
+    busy: "<red>已经有一次导入在进行</red>"
+    failed: "<red>导入失败：<error>（详见控制台）</red>"
+    preview: "<white>预览：<players> 名玩家（<files> 个文件，跳过 <skipped> 个），将有 <changed> 名玩家变化：新增解锁 <unlocks> 条、下线伪装 <restores> 个、属性 <props> 组。确认导入请执行 <#ff9ecf>/ym import feathermorph confirm</#ff9ecf></white>"
+    done: "<white>导入完成：<players> 名玩家，<changed> 名有变化：新增解锁 <unlocks> 条、下线伪装 <restores> 个、属性 <props> 组。导入前的 YuiMorph 数据已备份为 <backup></white>"

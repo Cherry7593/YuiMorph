@@ -38,7 +38,11 @@ private class PlayerDataFile(
  * 每个玩家一个 JSON 文件：`playerdata/<uuid>.json`。
  *
  * - 加载：在玩家登录前（异步线程，可阻塞）调用 [load]
- * - 保存：修改后调用 [save]，写入在单线程 IO 执行器上串行执行，先写临时文件再原子替换
+ * - 保存：修改后调用 [save]，先写临时文件再原子替换
+ * - 离线修改：[update]（数据导入等）
+ *
+ * 所有磁盘读写都在同一个单线程 IO 执行器上串行执行，所以「下线保存」「快速重进读取」「导入写入」
+ * 之间不会读到旧数据或互相覆盖。
  */
 class PlayerDataStore(dataFolder: File, private val logger: Logger) {
     private val dir = File(dataFolder, "playerdata").apply { mkdirs() }
@@ -49,8 +53,36 @@ class PlayerDataStore(dataFolder: File, private val logger: Logger) {
     /** 已加载的玩家数据。未加载（不在线）返回 null。 */
     operator fun get(uuid: UUID): PlayerData? = cache[uuid]
 
-    /** 阻塞读取磁盘并缓存。只能在异步线程调用。 */
-    fun load(uuid: UUID): PlayerData = cache.computeIfAbsent(uuid) { read(it).let { f -> PlayerData(f.unlocked.orEmpty(), f.properties.orEmpty(), f.current) } }
+    /** 阻塞读取磁盘并缓存。只能在异步线程调用（读取排在已提交的写入之后，不会读到旧数据）。 */
+    fun load(uuid: UUID): PlayerData = cache[uuid] ?: io.submit<PlayerData> { cache.computeIfAbsent(uuid, ::readData) }.get()
+
+    private fun readData(uuid: UUID): PlayerData = read(uuid).let { f -> PlayerData(f.unlocked.orEmpty(), f.properties.orEmpty(), f.current) }
+
+    /**
+     * 修改任意玩家（在线或离线）的数据，阻塞直到写入完成。只能在异步线程调用。
+     * [block] 返回 true 表示有改动需要保存。在线玩家改内存并保存；离线玩家读 → 改 → 写，都在 IO 线程内完成。
+     */
+    fun update(uuid: UUID, block: (PlayerData) -> Boolean): Boolean = io.submit<Boolean> {
+        val data = cache[uuid] ?: readData(uuid)
+        val changed = block(data)
+        if (changed) write(uuid, snapshot(data))
+        changed
+    }.get()
+
+    /** 读取玩家数据的副本（在线取内存，离线读磁盘），修改它不会影响实际数据。只能在异步线程调用。 */
+    fun peek(uuid: UUID): PlayerData = io.submit<PlayerData> {
+        cache[uuid]?.let { PlayerData(it.unlocked, it.properties, it.current) } ?: readData(uuid)
+    }.get()
+
+    /** 备份整个数据目录，返回备份目录。 */
+    fun backup(tag: String): File = io.submit<File> {
+        val target = File(dir.parentFile, "playerdata-backup-$tag")
+        dir.copyRecursively(target, overwrite = false)
+        target
+    }.get()
+
+    private fun snapshot(data: PlayerData) =
+        PlayerDataFile(unlocked = data.unlocked.sorted(), properties = data.properties.toSortedMap(), current = data.current)
 
     private fun read(uuid: UUID): PlayerDataFile {
         val file = file(uuid)
@@ -69,7 +101,7 @@ class PlayerDataStore(dataFolder: File, private val logger: Logger) {
     /** 异步保存玩家当前数据。 */
     fun save(uuid: UUID) {
         val data = cache[uuid] ?: return
-        val snapshot = PlayerDataFile(unlocked = data.unlocked.sorted(), properties = data.properties.toSortedMap(), current = data.current)
+        val snapshot = snapshot(data)
         io.execute { write(uuid, snapshot) }
     }
 

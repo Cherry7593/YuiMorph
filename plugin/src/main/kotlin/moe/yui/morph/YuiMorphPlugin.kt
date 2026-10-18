@@ -17,6 +17,7 @@ import moe.yui.morph.effect.DisguiseSounds
 import moe.yui.morph.effect.EntityTraits
 import moe.yui.morph.gui.DisguiseMenu
 import moe.yui.morph.i18n.Messages
+import moe.yui.morph.migrate.FeatherMorphImporter
 import moe.yui.morph.listener.PlayerListener
 import moe.yui.morph.protocol.Protocol
 import moe.yui.morph.render.DisguiseRenderer
@@ -62,6 +63,7 @@ class YuiMorphPlugin : JavaPlugin() {
         private set
     lateinit var client: ClientBridge
         private set
+    val importer by lazy { FeatherMorphImporter(this) }
 
     override fun onEnable() {
         saveDefaultConfig()

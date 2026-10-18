@@ -10,6 +10,7 @@ import moe.yui.morph.Permissions
 import moe.yui.morph.YuiMorphPlugin
 import moe.yui.morph.disguise.DisguiseId
 import moe.yui.morph.i18n.ph
+import moe.yui.morph.util.runAsync
 import moe.yui.morph.util.runOnRegion
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
@@ -61,6 +62,13 @@ class AdminCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
         .then(withTargets("lookup") { sender, target -> lookup(sender, target) })
         .then(ban("ban", true))
         .then(ban("unban", false))
+        .then(
+            literal("import").then(
+                literal("feathermorph")
+                    .executes { ctx -> importFeatherMorph(ctx.source.sender, apply = false) }
+                    .then(literal("confirm").executes { ctx -> importFeatherMorph(ctx.source.sender, apply = true) }),
+            ),
+        )
         .then(literal("bans").executes { ctx ->
             val bans = plugin.morphConfig.bannedDisguises.sorted()
             if (bans.isEmpty()) msg.send(ctx.source.sender, "admin.bans-empty")
@@ -104,6 +112,35 @@ class AdminCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
             ph("player", target.name), ph("count", unlocked.size.toString()),
             ph("list", Component.join(JoinConfiguration.commas(true), names)),
         )
+    }
+
+    // ---------------- 数据导入 ----------------
+
+    /** 不带 confirm 只预览；导入在异步线程执行，完成后把结果发给执行者。 */
+    private fun importFeatherMorph(sender: CommandSender, apply: Boolean): Int {
+        val importer = plugin.importer
+        if (!importer.hasSource()) {
+            msg.send(sender, "admin.import.no-source", ph("path", importer.sourceDir.path))
+            return 0
+        }
+        msg.send(sender, if (apply) "admin.import.started" else "admin.import.previewing")
+        plugin.runAsync {
+            val result = try {
+                importer.run(apply)
+            } catch (e: Exception) {
+                msg.send(sender, "admin.import.failed", ph("error", e.toString()))
+                return@runAsync
+            }
+            if (result == null) return@runAsync msg.send(sender, "admin.import.busy")
+            val placeholders = arrayOf(
+                ph("files", result.files.toString()), ph("players", result.players.toString()),
+                ph("skipped", result.skippedFiles.toString()), ph("changed", result.changedPlayers.toString()),
+                ph("unlocks", result.addedUnlocks.toString()), ph("restores", result.restoredDisguises.toString()),
+                ph("props", result.importedProperties.toString()), ph("backup", result.backup?.name ?: "-"),
+            )
+            msg.send(sender, if (apply) "admin.import.done" else "admin.import.preview", *placeholders)
+        }
+        return Command.SINGLE_SUCCESS
     }
 
     // ---------------- 封禁 ----------------

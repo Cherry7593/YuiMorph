@@ -19,6 +19,19 @@
 | 界面 | 无 Mod：箱子 GUI（`/morph`）；装了 Mod：原生选择界面（N）、动作（G）、解除（↓）、HUD、F5 看到自己 |
 | 管理 | `/ym status / query / queryall / lookup / grant / revoke / force / unmorph / ban / unban / bans / reload` |
 
+## 从 FeatherMorph 迁移
+
+保留 `plugins/FeatherMorph/` 数据目录（插件 jar 可以移除），启动 YuiMorph 后在控制台执行：
+
+```text
+ym import feathermorph           # 预览：统计会导入多少，不写入
+ym import feathermorph confirm   # 执行导入
+```
+
+- 导入已解锁伪装（ID 格式相同）和下线时的伪装（下次进服恢复）；常见属性（变种、马的颜色花纹、史莱姆大小、闪电苦力怕）会转换，`player/skin` 等不迁移
+- **合并而不是覆盖**：重复执行是安全的，玩家在 YuiMorph 里已经解锁的不会丢；在线玩家也可以直接导入
+- 只读取 FeatherMorph 数据；导入前自动备份 `plugins/YuiMorph/playerdata` 为 `playerdata-backup-<时间>`
+
 ## 构建
 
 需要 JDK 25。
