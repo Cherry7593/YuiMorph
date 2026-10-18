@@ -1,0 +1,31 @@
+name: YuiMorph
+version: '${version}'
+main: moe.yui.morph.YuiMorphPlugin
+description: 伪装成生物或玩家
+authors: [ yui ]
+api-version: '26.3'
+folia-supported: true
+
+dependencies:
+  server:
+    packetevents:
+      load: BEFORE
+      required: true
+      join-classpath: true
+
+permissions:
+  yuimorph.morph:
+    description: 使用 /morph 伪装自己
+    default: true
+  yuimorph.unmorph:
+    description: 使用 /unmorph 解除伪装
+    default: true
+  yuimorph.acquire:
+    description: 通过击杀解锁伪装
+    default: true
+  yuimorph.morph.any:
+    description: 不需要解锁即可使用任意伪装
+    default: op
+  yuimorph.admin:
+    description: 使用 /yuimorph 管理命令
+    default: op

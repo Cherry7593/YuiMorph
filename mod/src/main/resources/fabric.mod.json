@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "yuimorph",
+  "version": "${version}",
+  "name": "YuiMorph",
+  "description": "YuiMorph 客户端增强：自身伪装渲染、伪装选择界面、快捷键与状态 HUD。",
+  "authors": ["yui"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      {
+        "adapter": "kotlin",
+        "value": "moe.yui.morph.client.YuiMorphClient"
+      }
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*",
+    "fabric-language-kotlin": "*"
+  }
+}

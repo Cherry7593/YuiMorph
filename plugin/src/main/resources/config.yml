@@ -1,0 +1,20 @@
+# YuiMorph 配置文件
+
+# 消息语言，对应 plugins/YuiMorph/lang/<language>.yml
+language: zh_cn
+
+# 击杀生物或玩家后解锁对应伪装
+# 带有 `yuimorph_nogrant` 标签的实体不会给予解锁
+unlock-on-kill: true
+
+# 禁用的伪装，任何人都无法使用
+# 支持 `minecraft:@all` / `player:@all` 禁用整个分类
+banned-disguises:
+  - minecraft:ender_dragon
+  - minecraft:wither
+
+# 在这些世界中不能伪装（进入这些世界时会自动解除伪装）
+disabled-worlds: []
+
+# 请勿修改
+config-version: 1

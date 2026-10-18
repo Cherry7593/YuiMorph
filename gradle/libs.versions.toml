@@ -1,0 +1,25 @@
+[versions]
+kotlin = "2.4.21"
+shadow = "9.6.1"
+folia = "26.3.build.3-alpha"
+packetevents = "2.14.0"
+minecraft = "26.3"
+fabric-loom = "1.19.1"
+fabric-loader = "0.19.5"
+fabric-api = "0.163.0+26.3"
+fabric-kotlin = "1.14.2+kotlin.2.4.21"
+junit = "5.13.4"
+
+[libraries]
+folia-api = { module = "dev.folia:folia-api", version.ref = "folia" }
+packetevents-spigot = { module = "com.github.retrooper:packetevents-spigot", version.ref = "packetevents" }
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+fabric-kotlin = { module = "net.fabricmc:fabric-language-kotlin", version.ref = "fabric-kotlin" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }

@@ -1,0 +1,36 @@
+# YuiMorph 语言文件（MiniMessage 格式：https://docs.advntr.dev/minimessage/format.html）
+# 缺失的键会自动使用插件内置的默认文本
+
+prefix: "<#dddddd>≡ <#ff9ecf>YuiMorph</#ff9ecf> » </#dddddd>"
+
+morph:
+  success: "<white>你伪装成了 <#ff9ecf><disguise></#ff9ecf></white>"
+  unmorph: "<white>你解除了伪装</white>"
+  not-disguised: "<gray>你当前没有伪装</gray>"
+  already: "<gray>你已经是 <disguise> 了</gray>"
+  invalid-id: "<red>无效的伪装：<id></red>"
+  not-unlocked: "<red>你还没有解锁 <disguise></red>"
+  no-permission: "<red>你没有权限伪装成 <disguise></red>"
+  banned: "<red><disguise> 已被服务器禁用</red>"
+  world-disabled: "<red>当前世界不允许伪装</red>"
+  world-disabled-removed: "<gray>当前世界不允许伪装，已为你解除伪装</gray>"
+  player-not-supported: "<red>暂不支持伪装成玩家</red>"
+  players-only: "<red>只有玩家才能使用这个命令</red>"
+
+unlock:
+  new: "<white>解锁了新伪装：<#ff9ecf><disguise></#ff9ecf></white>"
+
+list:
+  header: "<white>已解锁的伪装（<count>）：</white>"
+  empty: "<gray>你还没有解锁任何伪装，去击杀生物试试吧</gray>"
+  entry: "<#ff9ecf><disguise></#ff9ecf> <dark_gray>(<id>)</dark_gray>"
+
+admin:
+  reloaded: "<white>配置已重载</white>"
+  granted: "<white>已给予 <player> 伪装 <disguise></white>"
+  already-granted: "<gray><player> 已经拥有 <disguise></gray>"
+  revoked: "<white>已移除 <player> 的伪装 <disguise></white>"
+  not-granted: "<gray><player> 没有 <disguise></gray>"
+  forced: "<white>已让 <player> 伪装成 <disguise></white>"
+  force-unmorphed: "<white>已解除 <player> 的伪装</white>"
+  no-target: "<red>没有找到目标玩家</red>"
