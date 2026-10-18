@@ -72,6 +72,8 @@ class DisguiseRenderer(
                 PacketType.Play.Server.UPDATE_ATTRIBUTES -> onAttributes(event)
                 PacketType.Play.Server.SOUND_EFFECT -> sounds.rewrite(event)
                 PacketType.Play.Server.ENTITY_SOUND_EFFECT -> sounds.rewriteEntity(event)
+                PacketType.Play.Server.HURT_ANIMATION -> sounds.onHurtAnimation(event)
+                PacketType.Play.Server.DAMAGE_EVENT -> sounds.onDamageEvent(event)
             }
         } catch (e: Exception) {
             logger.log(Level.WARNING, "改写数据包失败：${event.packetType}", e)
