@@ -36,6 +36,34 @@ property:
   invalid-value: "<red><key> 不能设为 <value></red>"
   no-permission: "<red>你没有权限设置 <key></red>"
 
+action:
+  not-disguised: "<gray>你需要先伪装才能播放动作</gray>"
+  none: "<gray><disguise> 没有可以播放的动作</gray>"
+  header: "<white><disguise> 的动作（点击播放）：</white>"
+  entry: "<#ff9ecf>[<name>]</#ff9ecf>"
+  hover: "<gray>/morphaction <action></gray>"
+  unknown: "<red>当前伪装没有动作 <action></red>"
+  nothing-to-stop: "<gray>当前没有正在进行的动作</gray>"
+  # 动作的显示名，缺失时显示动作 ID
+  names:
+    sit: "坐下"
+    sleep: "睡觉"
+    lie: "躺下"
+    lay: "躺下"
+    peek: "探头"
+    open: "打开"
+    dance: "跳舞"
+    roll: "缩成球"
+    sniff: "嗅探"
+    dig: "挖掘"
+    eat: "吐舌头"
+    croak: "鸣叫"
+    roar: "怒吼"
+    inflate: "膨胀"
+    activate: "激活"
+    crawl: "爬行"
+    stop: "停止"
+
 unlock:
   new: "<white>解锁了新伪装：<#ff9ecf><disguise></#ff9ecf></white>"
 

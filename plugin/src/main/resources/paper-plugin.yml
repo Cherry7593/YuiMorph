@@ -35,6 +35,9 @@ permissions:
   yuimorph.property.skin:
     description: 让玩家伪装使用另一个玩家的皮肤
     default: op
+  yuimorph.action:
+    description: 使用 /morphaction 播放伪装动作
+    default: true
   yuimorph.request.send:
     description: 发送伪装交换请求
     default: true

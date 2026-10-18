@@ -140,6 +140,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
     }
 
     private fun activate(player: Player, session: DisguiseSession) {
+        plugin.actions.forget(player)
         val old = current(player)
         sessions.put(session)
         plugin.renderer.apply(player, old, session)
@@ -153,6 +154,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
             return false
         }
         val hadPending = pending.remove(player.uniqueId) != null
+        plugin.actions.forget(player)
         val old = sessions.remove(player.uniqueId)
         if (old == null) {
             if (!silent && !hadPending) msg.send(player, "morph.not-disguised")
@@ -246,6 +248,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
     /** 玩家下线：丢弃会话；玩家伪装的虚拟档案需要从其他客户端移除。 */
     fun onQuit(player: Player) {
         pending.remove(player.uniqueId)
+        plugin.actions.forget(player)
         // 在玩家存档之前恢复血量上限，避免下次进服时血量被截断
         plugin.effects.clear(player)
         sessions.remove(player.uniqueId)?.profile?.let(plugin.renderer::broadcastProfileRemoval)

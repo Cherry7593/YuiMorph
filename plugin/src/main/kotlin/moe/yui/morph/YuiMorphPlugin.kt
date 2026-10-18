@@ -1,5 +1,7 @@
 package moe.yui.morph
 
+import moe.yui.morph.action.ActionManager
+import moe.yui.morph.command.ActionCommands
 import moe.yui.morph.command.AdminCommands
 import moe.yui.morph.command.CommandModule
 import moe.yui.morph.command.PlayerCommands
@@ -53,13 +55,18 @@ class YuiMorphPlugin : JavaPlugin() {
         private set
     lateinit var sounds: DisguiseSounds
         private set
+    lateinit var layouts: EntityLayouts
+        private set
+    lateinit var actions: ActionManager
+        private set
 
     override fun onEnable() {
         saveDefaultConfig()
         reload()
 
-        val layouts = getResource("entity-layouts.tsv")?.use(EntityLayouts::load)
+        layouts = getResource("entity-layouts.tsv")?.use(EntityLayouts::load)
             ?: error("插件 jar 缺少 entity-layouts.tsv")
+        actions = ActionManager(this)
         properties = DisguiseProperties(layouts, PeMetadata)
         val traits = getResource("entity-traits.tsv")?.use(EntityTraits::load) ?: error("插件 jar 缺少 entity-traits.tsv")
         effects = DisguiseEffects(this, traits)
@@ -76,7 +83,8 @@ class YuiMorphPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(PlayerListener(this), this)
         server.pluginManager.registerEvents(DisguiseMenu.MenuListener(), this)
         server.pluginManager.registerEvents(sounds, this)
-        CommandModule.registerAll(this, listOf(PlayerCommands(this), RequestCommands(this), AdminCommands(this)))
+        server.pluginManager.registerEvents(actions, this)
+        CommandModule.registerAll(this, listOf(PlayerCommands(this), ActionCommands(this), RequestCommands(this), AdminCommands(this)))
 
         // 插件在玩家在线时启用（例如热重载），补加载数据
         server.onlinePlayers.forEach { p -> runAsync { store.load(p.uniqueId) } }

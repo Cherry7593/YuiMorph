@@ -23,8 +23,17 @@ data class DisguiseSession(
     val metadata: List<EntityData<*>> = emptyList(),
     /** 仅玩家伪装。 */
     val profile: DisguiseProfile? = null,
+    /** 正在进行的动作带来的元数据，叠加在属性之上（同索引以动作为准）。 */
+    val actionMetadata: List<EntityData<*>> = emptyList(),
 ) {
-    val overriddenIndices: Set<Int> = metadata.mapTo(HashSet()) { it.index }
+    /** 实际生效的覆盖值：属性 + 动作。 */
+    val allMetadata: List<EntityData<*>> = run {
+        val actionIndices = actionMetadata.mapTo(HashSet()) { it.index }
+        metadata.filter { it.index !in actionIndices } + actionMetadata
+    }
+
+    /** 服务器发出的这些索引会被丢弃（例如动作进行中不让潜行改变姿态）。 */
+    val overriddenIndices: Set<Int> = allMetadata.mapTo(HashSet()) { it.index }
 }
 
 /** 当前所有伪装会话，可以按玩家 UUID 或 entity id 查找。任意线程可读。 */

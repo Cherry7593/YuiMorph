@@ -1,5 +1,6 @@
 package moe.yui.morph.render
 
+import com.github.retrooper.packetevents.protocol.entity.armadillo.ArmadilloState
 import com.github.retrooper.packetevents.protocol.entity.cat.CatVariants
 import com.github.retrooper.packetevents.protocol.entity.chicken.ChickenVariants
 import com.github.retrooper.packetevents.protocol.entity.cow.CowVariants
@@ -9,6 +10,8 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes
 import com.github.retrooper.packetevents.protocol.entity.frog.FrogVariants
 import com.github.retrooper.packetevents.protocol.entity.nautilus.ZombieNautilusVariants
 import com.github.retrooper.packetevents.protocol.entity.pig.PigVariants
+import com.github.retrooper.packetevents.protocol.entity.pose.EntityPose
+import com.github.retrooper.packetevents.protocol.entity.sniffer.SnifferState
 import com.github.retrooper.packetevents.protocol.entity.villager.VillagerData
 import com.github.retrooper.packetevents.protocol.entity.villager.profession.VillagerProfessions
 import com.github.retrooper.packetevents.protocol.entity.villager.type.VillagerTypes
@@ -61,6 +64,9 @@ object PeMetadata : RegistryNames {
             DataKind.ZOMBIE_NAUTILUS_VARIANT ->
                 EntityDataTypes.ZOMBIE_NAUTILUS_VARIANT to entry(RegistrySource.ZOMBIE_NAUTILUS_VARIANT, v as String)
             DataKind.VILLAGER_DATA -> EntityDataTypes.VILLAGER_DATA to villager(v as VillagerSpec)
+            DataKind.POSE -> EntityDataTypes.ENTITY_POSE to EntityPose.valueOf(v as String)
+            DataKind.ARMADILLO_STATE -> EntityDataTypes.ARMADILLO_STATE to ArmadilloState.valueOf(v as String)
+            DataKind.SNIFFER_STATE -> EntityDataTypes.SNIFFER_STATE to SnifferState.valueOf(v as String)
         }
         return value?.let { create(meta.index, type, it) }
     }

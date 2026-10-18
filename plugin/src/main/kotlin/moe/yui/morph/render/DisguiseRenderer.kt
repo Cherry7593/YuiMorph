@@ -94,9 +94,9 @@ class DisguiseRenderer(
         event.markForReEncode(true)
 
         // 服务器随后发出的元数据会被过滤，属性覆盖值要在生成之后补发
-        if (session.metadata.isNotEmpty()) {
+        if (session.allMetadata.isNotEmpty()) {
             val user = event.user
-            val meta = WrapperPlayServerEntityMetadata(session.entityId, session.metadata)
+            val meta = WrapperPlayServerEntityMetadata(session.entityId, session.allMetadata)
             event.tasksAfterSend.add { user.sendPacketSilently(meta) }
         }
     }
@@ -156,6 +156,13 @@ class DisguiseRenderer(
         viewers.forEach { send(it, packets) }
     }
 
+    /** 向当前观察者发送元数据更新（动作变化时用，不重新生成实体）。必须在玩家所在区域线程调用。 */
+    fun sendMetadata(player: Player, data: List<EntityData<*>>) {
+        if (data.isEmpty()) return
+        val packet = WrapperPlayServerEntityMetadata(player.entityId, data)
+        player.trackedBy.forEach { send(it, listOf(packet)) }
+    }
+
     /** 让所有在线玩家（除 [except]）知道这个虚拟档案，玩家伪装的实体才能生成。 */
     fun broadcastProfile(profile: DisguiseProfile, except: Player?) {
         val packet = profileAdd(profile)
@@ -208,7 +215,7 @@ class DisguiseRenderer(
         val metadata = if (session == null) {
             EntitySnapshot.realPlayer(player)
         } else {
-            EntitySnapshot.common(player).filter { it.index !in session.overriddenIndices } + session.metadata
+            EntitySnapshot.common(player).filter { it.index !in session.overriddenIndices } + session.allMetadata
         }
 
         return buildList {

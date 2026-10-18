@@ -14,6 +14,9 @@ enum class DataKind {
 
     /** 值为 [VillagerSpec]。 */
     VILLAGER_DATA,
+
+    /** 以下值为枚举名，例如 `SITTING`、`ROLLING`。 */
+    POSE, ARMADILLO_STATE, SNIFFER_STATE,
 }
 
 /** 属性值可选项来自的注册表。 */
