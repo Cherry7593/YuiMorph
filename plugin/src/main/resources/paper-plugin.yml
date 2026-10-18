@@ -15,10 +15,10 @@ dependencies:
 
 permissions:
   yuimorph.morph:
-    description: 使用 /morph 伪装自己
+    description: 使用 /ym 和 /ym morph 伪装自己
     default: true
   yuimorph.unmorph:
-    description: 使用 /unmorph 解除伪装
+    description: 使用 /ym unmorph 解除伪装
     default: true
   yuimorph.acquire:
     description: 通过击杀解锁伪装
@@ -27,7 +27,7 @@ permissions:
     description: 不需要解锁即可使用任意伪装
     default: op
   yuimorph.property:
-    description: 使用 /morphprop 设置伪装属性
+    description: 使用 /ym property 设置伪装属性
     default: true
   yuimorph.property.name:
     description: 给伪装设置自定义名字
@@ -36,7 +36,7 @@ permissions:
     description: 让玩家伪装使用另一个玩家的皮肤
     default: op
   yuimorph.action:
-    description: 使用 /morphaction 播放伪装动作
+    description: 使用 /ym action 播放伪装动作
     default: true
   yuimorph.request.send:
     description: 发送伪装交换请求
@@ -51,5 +51,5 @@ permissions:
     description: 不受强制伪装限制
     default: op
   yuimorph.admin:
-    description: 使用 /yuimorph 管理命令
+    description: 使用 /ym admin 管理命令
     default: op

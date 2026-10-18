@@ -25,7 +25,7 @@ morph:
 property:
   not-disguised: "<gray>你需要先伪装才能设置属性</gray>"
   none: "<gray><disguise> 没有可以设置的属性</gray>"
-  header: "<white><disguise> 的属性（/morphprop 属性 值，只写属性名则重置）：</white>"
+  header: "<white><disguise> 的属性（/ym property 属性 值，只写属性名则重置）：</white>"
   entry: "<#ff9ecf><key></#ff9ecf> <dark_gray>=</dark_gray> <white><value></white> <dark_gray>[<values>]</dark_gray>"
   # 下面两条会嵌入其他消息，请只写纯文本
   default: "默认"
@@ -41,7 +41,7 @@ action:
   none: "<gray><disguise> 没有可以播放的动作</gray>"
   header: "<white><disguise> 的动作（点击播放）：</white>"
   entry: "<#ff9ecf>[<name>]</#ff9ecf>"
-  hover: "<gray>/morphaction <action></gray>"
+  hover: "<gray>/ym action <action></gray>"
   unknown: "<red>当前伪装没有动作 <action></red>"
   nothing-to-stop: "<gray>当前没有正在进行的动作</gray>"
   # 动作的显示名，缺失时显示动作 ID
@@ -63,6 +63,31 @@ action:
     activate: "激活"
     crawl: "爬行"
     stop: "停止"
+
+help:
+  header: "<white>YuiMorph <version> 指令（点击可填入聊天框）：</white>"
+  entry: "<#ff9ecf><usage></#ff9ecf> <dark_gray>-</dark_gray> <gray><description></gray>"
+  open-menu: "打开伪装选择界面"
+  morph: "伪装成生物或玩家，例如 pig、player:Notch"
+  unmorph: "解除伪装"
+  property: "查看或设置当前伪装的属性，只写属性名则重置"
+  action: "查看或播放当前伪装的动作"
+  request-send: "向玩家发送伪装交换请求"
+  request-accept: "接受交换请求"
+  request-deny: "拒绝交换请求"
+  admin-status: "插件状态"
+  admin-query: "查看玩家当前的伪装"
+  admin-queryall: "列出所有正在伪装的玩家"
+  admin-lookup: "查看玩家已解锁的伪装"
+  admin-grant: "给予玩家伪装"
+  admin-revoke: "移除玩家的伪装"
+  admin-force: "强制玩家伪装（无视解锁和封禁）"
+  admin-unmorph: "强制解除玩家的伪装"
+  admin-ban: "禁用伪装，支持 minecraft:@all / player:@all"
+  admin-unban: "解除禁用"
+  admin-bans: "查看禁用列表"
+  admin-import: "从 FeatherMorph 导入数据（先预览，加 confirm 执行）"
+  admin-reload: "重载配置和语言文件"
 
 unlock:
   new: "<white>解锁了新伪装：<#ff9ecf><disguise></#ff9ecf></white>"
@@ -121,5 +146,5 @@ admin:
     started: "<gray>正在导入 FeatherMorph 数据…</gray>"
     busy: "<red>已经有一次导入在进行</red>"
     failed: "<red>导入失败：<error>（详见控制台）</red>"
-    preview: "<white>预览：<players> 名玩家（<files> 个文件，跳过 <skipped> 个），将有 <changed> 名玩家变化：新增解锁 <unlocks> 条、下线伪装 <restores> 个、属性 <props> 组。确认导入请执行 <#ff9ecf>/ym import feathermorph confirm</#ff9ecf></white>"
+    preview: "<white>预览：<players> 名玩家（<files> 个文件，跳过 <skipped> 个），将有 <changed> 名玩家变化：新增解锁 <unlocks> 条、下线伪装 <restores> 个、属性 <props> 组。确认导入请执行 <#ff9ecf>/ym admin import feathermorph confirm</#ff9ecf></white>"
     done: "<white>导入完成：<players> 名玩家，<changed> 名有变化：新增解锁 <unlocks> 条、下线伪装 <restores> 个、属性 <props> 组。导入前的 YuiMorph 数据已备份为 <backup></white>"

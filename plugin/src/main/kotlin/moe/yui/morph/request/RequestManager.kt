@@ -1,6 +1,7 @@
 package moe.yui.morph.request
 
 import moe.yui.morph.YuiMorphPlugin
+import moe.yui.morph.command.RootCommand
 import moe.yui.morph.disguise.DisguiseId
 import moe.yui.morph.i18n.ph
 import moe.yui.morph.util.runOnRegion
@@ -40,9 +41,9 @@ class RequestManager(private val plugin: YuiMorphPlugin) {
         requests[key] = Request(from.name, to.name, now() + timeout * 1000L)
         msg.send(from, "request.sent", ph("player", to.name), ph("seconds", timeout.toString()))
 
-        val buttons = msg.get("request.accept-button").clickEvent(ClickEvent.runCommand("/request accept ${from.name}"))
+        val buttons = msg.get("request.accept-button").clickEvent(ClickEvent.runCommand("/${RootCommand.ALIAS} request accept ${from.name}"))
             .append(Component.space())
-            .append(msg.get("request.deny-button").clickEvent(ClickEvent.runCommand("/request deny ${from.name}")))
+            .append(msg.get("request.deny-button").clickEvent(ClickEvent.runCommand("/${RootCommand.ALIAS} request deny ${from.name}")))
         to.runOnRegion(plugin) {
             msg.send(to, "request.received", ph("player", from.name), ph("seconds", timeout.toString()))
             to.sendMessage(buttons)

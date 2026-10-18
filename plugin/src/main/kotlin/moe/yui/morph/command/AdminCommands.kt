@@ -18,14 +18,30 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
 /**
- * 管理命令 `/yuimorph`（别名 `/ym`）：
- * reload / status / grant / revoke / force / unmorph / query / queryall / lookup / ban / unban / bans
+ * 管理命令 `/ym admin ...`：
+ * status / query / queryall / lookup / grant / revoke / force / unmorph / ban / unban / bans / import / reload
  */
 class AdminCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
 
-    override fun commands() = listOf(CommandSpec(admin(), "YuiMorph 管理命令", listOf("ym")))
+    override fun nodes(): List<Sub> = listOf(admin())
 
-    private fun admin(): Node = literal("yuimorph")
+    override fun help() = listOf(
+        "status" to "help.admin-status",
+        "query <玩家>" to "help.admin-query",
+        "queryall" to "help.admin-queryall",
+        "lookup <玩家>" to "help.admin-lookup",
+        "grant <玩家> <伪装>" to "help.admin-grant",
+        "revoke <玩家> <伪装>" to "help.admin-revoke",
+        "force <玩家> <伪装>" to "help.admin-force",
+        "unmorph <玩家>" to "help.admin-unmorph",
+        "ban <伪装>" to "help.admin-ban",
+        "unban <伪装>" to "help.admin-unban",
+        "bans" to "help.admin-bans",
+        "import feathermorph [confirm]" to "help.admin-import",
+        "reload" to "help.admin-reload",
+    ).map { (usage, key) -> HelpEntry("admin $usage", key, Permissions.ADMIN) }
+
+    private fun admin(): Sub = literal("admin")
         .requires { it.sender.hasPermission(Permissions.ADMIN) }
         .then(literal("reload").executes { ctx ->
             plugin.reload()
@@ -75,7 +91,6 @@ class AdminCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
             else msg.send(ctx.source.sender, "admin.bans", ph("list", bans.joinToString(", ")))
             Command.SINGLE_SUCCESS
         })
-        .build()
 
     // ---------------- 查询 ----------------
 

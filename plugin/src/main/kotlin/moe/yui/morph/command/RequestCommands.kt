@@ -7,13 +7,19 @@ import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSele
 import moe.yui.morph.Permissions
 import moe.yui.morph.YuiMorphPlugin
 
-/** 交换请求：`/request send|accept|deny <玩家>`。 */
+/** 交换请求：`/ym request send|accept|deny <玩家>`。 */
 class RequestCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
     private val requests get() = plugin.requests
 
-    override fun commands() = listOf(CommandSpec(request(), "和其他玩家交换伪装"))
+    override fun nodes(): List<Sub> = listOf(request())
 
-    private fun request(): Node = literal("request")
+    override fun help() = listOf(
+        HelpEntry("request send <玩家>", "help.request-send", Permissions.REQUEST_SEND),
+        HelpEntry("request accept <玩家>", "help.request-accept", Permissions.REQUEST_ACCEPT),
+        HelpEntry("request deny <玩家>", "help.request-deny", Permissions.REQUEST_DENY),
+    )
+
+    private fun request(): Sub = literal("request")
         .then(
             literal("send")
                 .requires { it.sender.hasPermission(Permissions.REQUEST_SEND) }
@@ -27,7 +33,6 @@ class RequestCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
         )
         .then(respond("accept", Permissions.REQUEST_ACCEPT) { p, name -> requests.accept(p, name) })
         .then(respond("deny", Permissions.REQUEST_DENY) { p, name -> requests.deny(p, name) })
-        .build()
 
     private fun respond(sub: String, permission: String, action: (org.bukkit.entity.Player, String) -> Unit) =
         literal(sub)

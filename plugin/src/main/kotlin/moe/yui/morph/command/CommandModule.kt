@@ -1,6 +1,7 @@
 package moe.yui.morph.command
 
 import com.mojang.brigadier.Command
+import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
@@ -8,7 +9,6 @@ import com.mojang.brigadier.tree.LiteralCommandNode
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import moe.yui.morph.YuiMorphPlugin
 import moe.yui.morph.disguise.DisguiseId
 import moe.yui.morph.i18n.ph
@@ -18,9 +18,10 @@ import org.bukkit.entity.Player
 
 typealias Ctx = CommandContext<CommandSourceStack>
 typealias Node = LiteralCommandNode<CommandSourceStack>
+typealias Sub = ArgumentBuilder<CommandSourceStack, *>
 
-/** 一条要注册的命令。 */
-data class CommandSpec(val node: Node, val description: String, val aliases: List<String> = emptyList())
+/** `/ym help` 中的一行：[usage] 是 `/ym` 之后的部分，[descKey] 是语言文件键，[permission] 为 null 表示所有人可见。 */
+data class HelpEntry(val usage: String, val descKey: String, val permission: String?)
 
 /**
  * 命令模块的公共工具。
@@ -32,7 +33,11 @@ abstract class CommandModule(protected val plugin: YuiMorphPlugin) {
     protected val manager get() = plugin.disguises
     protected val msg get() = plugin.messages
 
-    abstract fun commands(): List<CommandSpec>
+    /** 挂在 `/ym` 下的子命令。 */
+    abstract fun nodes(): List<Sub>
+
+    /** 本模块在 `/ym help` 中显示的条目。 */
+    abstract fun help(): List<HelpEntry>
 
     /** 命令的执行者：`execute as` 时是被指定的实体，否则是发送者。 */
     protected fun playerOf(ctx: Ctx): Player? = ctx.source.executor as? Player ?: ctx.source.sender as? Player
@@ -83,12 +88,6 @@ abstract class CommandModule(protected val plugin: YuiMorphPlugin) {
     protected val allMobSuggestions = suggestions { DisguiseId.allMobs().map { it.toString() } }
 
     companion object {
-        fun registerAll(plugin: YuiMorphPlugin, modules: List<CommandModule>) {
-            plugin.lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
-                modules.flatMap { it.commands() }.forEach { event.registrar().register(it.node, it.description, it.aliases) }
-            }
-        }
-
         fun literal(name: String) = Commands.literal(name)
     }
 }

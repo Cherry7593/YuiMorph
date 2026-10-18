@@ -11,12 +11,14 @@ import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import org.bukkit.entity.Player
 
-/** 伪装动作：`/morphaction [动作]`（别名 `/ma`）。不带参数列出可点击的动作。 */
+/** 伪装动作：`/ym action [动作]`。不带参数列出可点击的动作。 */
 class ActionCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
 
-    override fun commands() = listOf(CommandSpec(action(), "播放伪装动作", listOf("ma")))
+    override fun nodes(): List<Sub> = listOf(action())
 
-    private fun action(): Node = literal("morphaction")
+    override fun help() = listOf(HelpEntry("action [动作]", "help.action", Permissions.ACTION))
+
+    private fun action(): Sub = literal("action")
         .requires { it.sender.hasPermission(Permissions.ACTION) }
         .executes { ctx -> onPlayerThread(ctx, ::list) }
         .then(
@@ -27,7 +29,6 @@ class ActionCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
                     onPlayerThread(ctx) { plugin.actions.play(it, name) }
                 },
         )
-        .build()
 
     private fun list(player: Player) {
         val session = manager.current(player) ?: return msg.send(player, "action.not-disguised")
@@ -39,7 +40,7 @@ class ActionCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
         val buttons = names.map { name ->
             val shown = msg.raw("action.names.$name").takeUnless { it == "action.names.$name" } ?: name
             msg.get("action.entry", ph("name", shown))
-                .clickEvent(ClickEvent.runCommand("/morphaction $name"))
+                .clickEvent(ClickEvent.runCommand("/${RootCommand.ALIAS} action $name"))
                 .hoverEvent(HoverEvent.showText(msg.get("action.hover", ph("action", name))))
         }
         player.sendMessage(Component.join(JoinConfiguration.spaces(), buttons))

@@ -9,18 +9,21 @@ import moe.yui.morph.gui.DisguiseMenu
 import moe.yui.morph.i18n.ph
 import org.bukkit.entity.Player
 
-/** 玩家命令：`/morph`、`/unmorph`、`/morphprop`。 */
+/** 玩家命令：`/ym morph <伪装>`、`/ym unmorph`、`/ym property [属性] [值]`。 */
 class PlayerCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
 
-    override fun commands() = listOf(
-        CommandSpec(morph(), "伪装成生物或玩家；不带参数打开选择界面"),
-        CommandSpec(unmorph(), "解除伪装"),
-        CommandSpec(morphProp(), "设置当前伪装的属性", listOf("mprop")),
+    override fun nodes(): List<Sub> = listOf(morph(), unmorph(), property())
+
+    override fun help() = listOf(
+        HelpEntry("", "help.open-menu", Permissions.MORPH),
+        HelpEntry("morph <伪装>", "help.morph", Permissions.MORPH),
+        HelpEntry("unmorph", "help.unmorph", Permissions.UNMORPH),
+        HelpEntry("property [属性] [值]", "help.property", Permissions.PROPERTY),
     )
 
-    // ---------------- /morph [伪装] ----------------
+    // ---------------- morph <伪装>（不带参数打开选择界面） ----------------
 
-    private fun morph(): Node = literal("morph")
+    private fun morph(): Sub = literal("morph")
         .requires { it.sender.hasPermission(Permissions.MORPH) }
         .executes { ctx -> onPlayerThread(ctx) { DisguiseMenu.open(plugin, it) } }
         .then(
@@ -31,16 +34,14 @@ class PlayerCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
                     onPlayerThread(ctx) { p -> parseOrReport(p, raw)?.let { manager.morph(p, it) } }
                 },
         )
-        .build()
 
-    private fun unmorph(): Node = literal("unmorph")
+    private fun unmorph(): Sub = literal("unmorph")
         .requires { it.sender.hasPermission(Permissions.UNMORPH) }
         .executes { ctx -> onPlayerThread(ctx) { manager.unmorph(it) } }
-        .build()
 
-    // ---------------- /morphprop [属性] [值] ----------------
+    // ---------------- property [属性] [值] ----------------
 
-    private fun morphProp(): Node = literal("morphprop")
+    private fun property(): Sub = literal("property")
         .requires { it.sender.hasPermission(Permissions.PROPERTY) }
         .executes { ctx -> withPlayer(ctx, ::listProperties) }
         .then(
@@ -65,7 +66,6 @@ class PlayerCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
                         },
                 ),
         )
-        .build()
 
     private fun currentKeys(player: Player?): List<String> {
         val session = player?.let(manager::current) ?: return emptyList()

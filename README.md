@@ -12,25 +12,40 @@
 | 类别 | 内容 |
 |---|---|
 | 伪装 | 原版生物、玩家（Mojang 皮肤）；服务端发包渲染 |
-| 属性 | `/morphprop`：幼体、颜色、剪毛、大小、变种、村民类型/职业、自定义名字、换皮肤 |
-| 动作 | `/morphaction`：坐下、睡觉、跳舞、怒吼、缩成球、爬行等 |
-| 获取 | 击杀解锁、玩家间交换请求（`/request`） |
+| 属性 | `/ym property`：幼体、颜色、剪毛、大小、变种、村民类型/职业、自定义名字、换皮肤 |
+| 动作 | `/ym action`：坐下、睡觉、跳舞、怒吼、缩成球、爬行等 |
+| 获取 | 击杀解锁、玩家间交换请求（`/ym request`） |
 | 体验 | 碰撞箱随体型缩放、血量缩放、环境 / 受击 / 死亡音效、下线恢复、强制伪装 |
-| 界面 | 无 Mod：箱子 GUI（`/morph`）；装了 Mod：原生选择界面（N）、动作（G）、解除（↓）、HUD、F5 看到自己 |
-| 管理 | `/ym status / query / queryall / lookup / grant / revoke / force / unmorph / ban / unban / bans / reload` |
+| 界面 | 无 Mod：箱子 GUI（`/ym`）；装了 Mod：原生选择界面（N）、动作（G）、解除（↓）、HUD、F5 看到自己 |
+| 管理 | `/ym admin status / query / queryall / lookup / grant / revoke / force / unmorph / ban / unban / bans / import / reload` |
 
 ## 从 FeatherMorph 迁移
 
 保留 `plugins/FeatherMorph/` 数据目录（插件 jar 可以移除），启动 YuiMorph 后在控制台执行：
 
 ```text
-ym import feathermorph           # 预览：统计会导入多少，不写入
-ym import feathermorph confirm   # 执行导入
+ym admin import feathermorph           # 预览：统计会导入多少，不写入
+ym admin import feathermorph confirm   # 执行导入
 ```
 
 - 导入已解锁伪装（ID 格式相同）和下线时的伪装（下次进服恢复）；常见属性（变种、马的颜色花纹、史莱姆大小、闪电苦力怕）会转换，`player/skin` 等不迁移
 - **合并而不是覆盖**：重复执行是安全的，玩家在 YuiMorph 里已经解锁的不会丢；在线玩家也可以直接导入
 - 只读取 FeatherMorph 数据；导入前自动备份 `plugins/YuiMorph/playerdata` 为 `playerdata-backup-<时间>`
+
+## 指令
+
+所有功能都在 `/ym`（全名 `/yuimorph`）下，没有权限的子指令不会出现在补全里。`/ym help` 只列出你能用的指令。
+
+| 指令 | 说明 | 权限（默认） |
+|---|---|---|
+| `/ym` | 打开伪装选择界面 | `yuimorph.morph`（所有人） |
+| `/ym morph <伪装>` | 伪装，例如 `pig`、`player:Notch` | `yuimorph.morph`（所有人） |
+| `/ym unmorph` | 解除伪装 | `yuimorph.unmorph`（所有人） |
+| `/ym property [属性] [值]` | 查看 / 设置 / 重置属性 | `yuimorph.property`（所有人） |
+| `/ym action [动作]` | 查看 / 播放动作 | `yuimorph.action`（所有人） |
+| `/ym request send\|accept\|deny <玩家>` | 伪装交换 | `yuimorph.request.*`（所有人） |
+| `/ym help` | 帮助 | 无 |
+| `/ym admin ...` | 管理指令 | `yuimorph.admin`（OP） |
 
 ## 构建
 

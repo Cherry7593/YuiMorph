@@ -4,9 +4,9 @@ import moe.yui.morph.action.ActionManager
 import moe.yui.morph.client.ClientBridge
 import moe.yui.morph.command.ActionCommands
 import moe.yui.morph.command.AdminCommands
-import moe.yui.morph.command.CommandModule
 import moe.yui.morph.command.PlayerCommands
 import moe.yui.morph.command.RequestCommands
+import moe.yui.morph.command.RootCommand
 import moe.yui.morph.config.MorphConfig
 import moe.yui.morph.disguise.DisguiseId
 import moe.yui.morph.disguise.DisguiseManager
@@ -90,7 +90,7 @@ class YuiMorphPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(DisguiseMenu.MenuListener(), this)
         server.pluginManager.registerEvents(sounds, this)
         server.pluginManager.registerEvents(actions, this)
-        CommandModule.registerAll(this, listOf(PlayerCommands(this), ActionCommands(this), RequestCommands(this), AdminCommands(this)))
+        RootCommand(this, listOf(PlayerCommands(this), ActionCommands(this), RequestCommands(this), AdminCommands(this))).register()
 
         // 插件在玩家在线时启用（例如热重载），补加载数据
         server.onlinePlayers.forEach { p -> runAsync { store.load(p.uniqueId) } }
