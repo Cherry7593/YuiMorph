@@ -1,19 +1,26 @@
 package moe.yui.morph.client
 
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask
+import moe.yui.morph.Permissions
 import moe.yui.morph.YuiMorphPlugin
 import moe.yui.morph.disguise.DisguiseId
+import moe.yui.morph.disguise.DisguiseManager
 import moe.yui.morph.disguise.DisguiseSession
+import moe.yui.morph.action.ActionDefs
+import moe.yui.morph.render.PeMetadata
 import moe.yui.morph.i18n.ph
 import moe.yui.morph.protocol.C2SHello
 import moe.yui.morph.protocol.C2SMorph
 import moe.yui.morph.protocol.C2SPlayAction
+import moe.yui.morph.protocol.C2SPreview
 import moe.yui.morph.protocol.C2SUnmorph
 import moe.yui.morph.protocol.PacketCodec
 import moe.yui.morph.protocol.Protocol
 import moe.yui.morph.protocol.ProtocolException
 import moe.yui.morph.protocol.S2CHello
+import moe.yui.morph.protocol.PropertySpec
 import moe.yui.morph.protocol.S2CPacket
+import moe.yui.morph.protocol.S2CPreview
 import moe.yui.morph.protocol.S2CSelfDisguise
 import moe.yui.morph.protocol.S2CUnlockedSync
 import moe.yui.morph.util.runOnRegion
@@ -65,8 +72,9 @@ class ClientBridge(private val plugin: YuiMorphPlugin) : PluginMessageListener {
                 is C2SHello -> handshake(player, packet)
                 // 握手前的请求一律忽略
                 else -> if (isModded(player)) when (packet) {
-                    is C2SMorph -> DisguiseId.parse(packet.disguiseId)?.let { plugin.disguises.morph(player, it) }
+                    is C2SMorph -> DisguiseId.parse(packet.disguiseId)?.let { plugin.disguises.morph(player, it, properties = packet.properties) }
                         ?: plugin.messages.send(player, "morph.invalid-id", ph("id", packet.disguiseId))
+                    is C2SPreview -> preview(player, packet)
                     C2SUnmorph -> plugin.disguises.unmorph(player)
                     is C2SPlayAction -> plugin.actions.play(player, packet.action)
                     is C2SHello -> Unit
@@ -99,6 +107,29 @@ class ClientBridge(private val plugin: YuiMorphPlugin) : PluginMessageListener {
                 plugin.renderer.sendProxyEquipment(player)
             }
         }, null, 10L, 10L)
+    }
+
+    // ---------------- 预览 ----------------
+
+    /**
+     * 计算预览外观：和真正伪装用同一套属性规则，所以预览和别人看到的完全一致。
+     * 只能预览自己可以使用的伪装；属性按权限过滤。必须在玩家所在区域线程调用。
+     */
+    private fun preview(player: Player, request: C2SPreview) {
+        val id = DisguiseId.parse(request.disguiseId) ?: return
+        val manager = plugin.disguises
+        // 已解锁（或可用）的伪装；拥有 morph.any 时可以预览任意玩家
+        val usable = id in manager.available(player) || (id is DisguiseId.Player && player.hasPermission(Permissions.MORPH_ANY))
+        if (!usable) return
+        val properties = request.properties?.let { manager.allowedProperties(player, id, it) } ?: manager.savedProperties(player, id)
+        val specs = manager.allowedKeys(player, id).map { key ->
+            PropertySpec(key.name, plugin.properties.values(key), key.maxLength)
+        }
+        val typeKey = DisguiseManager.typeKey(id)
+        send(player, S2CPreview(request.requestId, id.toString(), PREVIEW_ENTITY_ID, properties, specs, ActionDefs.names(typeKey)))
+        // 元数据紧跟在预览信息之后发出，客户端按顺序处理
+        val metadata = plugin.properties.metadata(typeKey, properties).mapNotNull(PeMetadata::toEntityData)
+        plugin.renderer.sendPreviewMetadata(player, PREVIEW_ENTITY_ID, metadata)
     }
 
     // ---------------- 状态推送 ----------------
@@ -142,6 +173,9 @@ class ClientBridge(private val plugin: YuiMorphPlugin) : PluginMessageListener {
     }
 
     private companion object {
+        /** 预览实体只存在于客户端的界面里，用一个不会和真实实体冲突的负数 ID。 */
+        const val PREVIEW_ENTITY_ID = -2
+
         val EQUIPMENT_SLOTS = listOf(
             EquipmentSlot.HAND, EquipmentSlot.OFF_HAND, EquipmentSlot.FEET,
             EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD,

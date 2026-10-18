@@ -16,7 +16,7 @@
 | 动作 | `/ym action`：坐下、睡觉、跳舞、怒吼、缩成球、爬行等 |
 | 获取 | 击杀解锁、玩家间交换请求（`/ym request`） |
 | 体验 | 碰撞箱随体型缩放、血量缩放、环境 / 受击 / 死亡音效、下线恢复、强制伪装 |
-| 界面 | 无 Mod：箱子 GUI（`/ym`）；装了 Mod：原生选择界面（N）、动作（G）、解除（↓）、HUD、F5 看到自己 |
+| 界面 | 无 Mod：箱子 GUI（`/ym`）；装了 Mod：实时模型的选择界面（N，属性所见即所得、预设、最近使用）、动作轮盘（按住 G）、解除（↓）、HUD、F5 看到自己 |
 | 管理 | `/ym admin status / query / queryall / lookup / grant / revoke / force / unmorph / ban / unban / bans / import / reload` |
 
 ## 从 FeatherMorph 迁移

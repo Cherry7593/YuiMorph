@@ -6,7 +6,7 @@ object Protocol {
     const val CHANNEL = "yuimorph:main"
 
     /** 协议版本，任何包结构变化都要 +1。 */
-    const val VERSION = 1
+    const val VERSION = 2
 
     /** 单个包的最大字节数，防止恶意客户端发送超大包。 */
     const val MAX_PACKET_BYTES = 1 shl 20

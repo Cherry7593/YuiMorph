@@ -188,6 +188,11 @@ class DisguiseRenderer(
         proxies[player.uniqueId]?.let { send(player, listOf(WrapperPlayServerEntityMetadata(it.entityId, data))) }
     }
 
+    /** 发给客户端界面里的预览实体（只存在于客户端，服务器只发元数据）。 */
+    fun sendPreviewMetadata(player: Player, entityId: Int, data: List<EntityData<*>>) {
+        if (data.isNotEmpty()) send(player, listOf(WrapperPlayServerEntityMetadata(entityId, data)))
+    }
+
     // ---------------- 代理实体（客户端 Mod） ----------------
 
     /** 为装了 Mod 的玩家启用代理，返回代理 ID。 */

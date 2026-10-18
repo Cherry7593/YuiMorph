@@ -10,6 +10,9 @@ class PacketCodecTest {
         listOf(
             C2SHello(Protocol.VERSION, "0.1.0"),
             C2SMorph("minecraft:pig"),
+            C2SMorph("minecraft:sheep", mapOf("color" to "pink")),
+            C2SPreview(7, "minecraft:cat", null),
+            C2SPreview(8, "player:Notch", mapOf("skin" to "jeb_")),
             C2SUnmorph,
             C2SPlayAction("sit"),
         ).forEach { assertEquals(it, PacketCodec.decodeC2S(PacketCodec.encode(it))) }
@@ -23,6 +26,11 @@ class PacketCodecTest {
             S2CSelfDisguise("minecraft:sheep", null, mapOf("color" to "pink"), listOf("sit", "stop"), -1001),
             S2CSelfDisguise("player:Notch", "Notch", emptyMap(), listOf("lay"), -1002),
             S2CSelfDisguise.NONE,
+            S2CPreview(
+                7, "minecraft:sheep", -2, mapOf("color" to "pink"),
+                listOf(PropertySpec("color", listOf("white", "pink"), 32), PropertySpec("name", null, 32)),
+                listOf("eat"),
+            ),
         ).forEach { assertEquals(it, PacketCodec.decodeS2C(PacketCodec.encode(it))) }
     }
 

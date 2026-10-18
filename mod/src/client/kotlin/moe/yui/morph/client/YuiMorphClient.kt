@@ -1,8 +1,11 @@
 package moe.yui.morph.client
 
 import com.mojang.blaze3d.platform.InputConstants
-import moe.yui.morph.client.gui.ActionScreen
-import moe.yui.morph.client.gui.DisguiseSelectScreen
+import moe.yui.morph.client.storage.ClientStorage
+import moe.yui.morph.client.ui.ActionWheelScreen
+import moe.yui.morph.client.ui.MorphScreen
+import moe.yui.morph.client.ui.PreviewController
+import moe.yui.morph.client.ui.PreviewEntities
 import moe.yui.morph.client.net.MorphPayload
 import moe.yui.morph.protocol.C2SHello
 import moe.yui.morph.protocol.C2SUnmorph
@@ -54,10 +57,15 @@ object YuiMorphClient : ClientModInitializer {
         // 进服后握手；服务器没装 YuiMorph 时不会回复，客户端保持原版行为
         ClientPlayConnectionEvents.JOIN.register { _, _, _ ->
             MorphClientState.reset()
+            ClientStorage.load()
             val version = FabricLoader.getInstance().getModContainer("yuimorph").map { it.metadata.version.friendlyString }.orElse("?")
             MorphClientState.send(C2SHello(Protocol.VERSION, version))
         }
-        ClientPlayConnectionEvents.DISCONNECT.register { _, _ -> MorphClientState.reset() }
+        ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
+            MorphClientState.reset()
+            PreviewController.clear()
+            PreviewEntities.clear()
+        }
     }
 
     private fun registerKeys() {
@@ -66,13 +74,23 @@ object YuiMorphClient : ClientModInitializer {
         unmorph = KeyMappingHelper.registerKeyMapping(KeyMapping("key.yuimorph.unmorph", InputConstants.Type.KEYBOARD, InputConstants.KEY_DOWN, category))
     }
 
+    /** 预览实体引用了创建时的世界，换世界（重生、跨维度）后要重建。 */
+    private var lastLevel: Any? = null
+
     private fun onTick(mc: Minecraft) {
         ProxyTicker.tick(mc)
+        if (mc.level !== lastLevel) {
+            lastLevel = mc.level
+            PreviewEntities.clear()
+        }
 
-        while (openMenu.consumeClick()) ifAccepted(mc) { mc.gui.setScreen(DisguiseSelectScreen()) }
+        while (openMenu.consumeClick()) ifAccepted(mc) { mc.gui.setScreen(MorphScreen()) }
         while (openActions.consumeClick()) ifAccepted(mc) {
-            if (MorphClientState.self.disguiseId == null) mc.player?.sendOverlayMessage(Component.translatable("yuimorph.message.not_disguised"))
-            else mc.gui.setScreen(ActionScreen())
+            when {
+                MorphClientState.self.disguiseId == null -> mc.player?.sendOverlayMessage(Component.translatable("yuimorph.message.not_disguised"))
+                MorphClientState.self.actions.isEmpty() -> mc.player?.sendOverlayMessage(Component.translatable("yuimorph.screen.actions.empty"))
+                else -> mc.gui.setScreen(ActionWheelScreen(openActions))
+            }
         }
         while (unmorph.consumeClick()) ifAccepted(mc) {
             if (MorphClientState.self.disguiseId != null) MorphClientState.send(C2SUnmorph)

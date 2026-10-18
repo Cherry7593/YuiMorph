@@ -54,7 +54,11 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
      * 变身。[force] 为 true 时跳过解锁、权限和封禁检查（管理员强制）。
      * 返回 true 表示已开始变身（玩家伪装在皮肤获取完成后才生效）；失败时已经给玩家发送了原因。
      */
-    fun morph(player: Player, id: DisguiseId, force: Boolean = false): Boolean {
+    /**
+     * [properties] 为 null 时使用该伪装上次保存的属性；否则使用这组属性（校验、按权限过滤后保存）。
+     * 已经是这个伪装时，带属性的请求会直接更新属性。
+     */
+    fun morph(player: Player, id: DisguiseId, force: Boolean = false, properties: Map<String, String>? = null): Boolean {
         val name = ph("disguise", id.displayName())
 
         if (!force) {
@@ -72,12 +76,24 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
             }
         }
 
-        if (current(player)?.disguise == id) {
-            msg.send(player, "morph.already", name)
-            return false
+        val requested = properties?.let { allowedProperties(player, id, it).also { p -> saveProperties(player, id, p) } }
+        val current = current(player)
+        if (current?.disguise == id) {
+            if (requested == null || requested == current.properties) {
+                msg.send(player, "morph.already", name)
+                return false
+            }
+            // 同一个伪装只换属性：玩家伪装换皮肤需要重新获取档案
+            if (id is DisguiseId.Player && requested[PropertyDefs.SKIN] != current.properties[PropertyDefs.SKIN]) {
+                morphAsPlayer(player, id, requested)
+            } else {
+                activate(player, buildSession(player, id, requested, current.profile))
+                msg.send(player, "morph.success", name)
+            }
+            return true
         }
 
-        val saved = savedProperties(player, id)
+        val saved = requested ?: savedProperties(player, id)
         if (!plugin.effects.hasSpaceFor(player, id, props.retain(typeKey(id), saved))) {
             msg.send(player, "morph.no-space", name)
             return false
@@ -214,7 +230,22 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
 
     private fun propertyStoreKey(id: DisguiseId) = if (id is DisguiseId.Player) id.toString().lowercase() else id.toString()
 
-    private fun savedProperties(player: Player, id: DisguiseId): Map<String, String> =
+    /** 校验属性值，并去掉玩家没有权限设置的属性（例如没有 yuimorph.property.skin 时的 skin）。 */
+    fun allowedProperties(player: Player, id: DisguiseId, raw: Map<String, String>): Map<String, String> {
+        val typeKey = typeKey(id)
+        val normalized = raw.mapNotNull { (k, v) ->
+            val key = props.key(typeKey, k) ?: return@mapNotNull null
+            if (key.permission != null && !player.hasPermission(key.permission)) return@mapNotNull null
+            props.normalize(key, v)?.let { key.name to it }
+        }.toMap()
+        return props.retain(typeKey, normalized)
+    }
+
+    /** 玩家能看到和设置的属性（按权限过滤）。 */
+    fun allowedKeys(player: Player, id: DisguiseId) =
+        props.keys(typeKey(id)).filter { it.permission == null || player.hasPermission(it.permission) }
+
+    fun savedProperties(player: Player, id: DisguiseId): Map<String, String> =
         plugin.store[player.uniqueId]?.properties?.get(propertyStoreKey(id)).orEmpty()
 
     private fun saveProperties(player: Player, id: DisguiseId, properties: Map<String, String>) {

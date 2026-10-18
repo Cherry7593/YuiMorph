@@ -5,7 +5,10 @@ import moe.yui.morph.protocol.C2SPacket
 import moe.yui.morph.protocol.PacketCodec
 import moe.yui.morph.protocol.S2CHello
 import moe.yui.morph.protocol.S2CPacket
+import moe.yui.morph.protocol.S2CPreview
 import moe.yui.morph.protocol.S2CSelfDisguise
+import moe.yui.morph.client.storage.ClientStorage
+import moe.yui.morph.client.ui.PreviewController
 import moe.yui.morph.protocol.S2CUnlockedSync
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.minecraft.client.Minecraft
@@ -47,7 +50,12 @@ object MorphClientState {
                 logger.info("YuiMorph 服务端 {}：{}", packet.serverVersion, if (packet.accepted) "已启用客户端增强" else "未启用客户端增强")
             }
             is S2CUnlockedSync -> available = if (packet.full) packet.added else (available - packet.removed.toSet() + packet.added).distinct()
-            is S2CSelfDisguise -> self = packet
+            is S2CSelfDisguise -> {
+                val changed = packet.disguiseId != null && packet.disguiseId != self.disguiseId
+                self = packet
+                if (changed) ClientStorage.pushRecent(packet.disguiseId!!)
+            }
+            is S2CPreview -> PreviewController.onPreview(packet)
         }
     }
 

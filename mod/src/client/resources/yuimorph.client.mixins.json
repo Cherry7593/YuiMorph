@@ -4,8 +4,10 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "ClientLevelMixin",
+    "ClientPacketListenerMixin",
     "EntityRenderDispatcherMixin",
     "LevelMixin",
+    "MannequinAccessor",
     "ProxyGuardEntityMixin",
     "ProxyGuardLivingEntityMixin"
   ],

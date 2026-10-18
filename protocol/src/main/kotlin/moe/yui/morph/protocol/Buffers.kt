@@ -38,6 +38,11 @@ class PacketWriter {
         values.forEach(::string)
     }
 
+    fun nullableStringMap(values: Map<String, String>?) = apply {
+        bool(values != null)
+        if (values != null) stringMap(values)
+    }
+
     fun stringMap(values: Map<String, String>) = apply {
         varInt(values.size)
         values.forEach { (k, v) -> string(k); string(v) }
@@ -94,6 +99,8 @@ class PacketReader(private val data: ByteArray) {
         val size = length(maxSize)
         return List(size) { string() }
     }
+
+    fun nullableStringMap(): Map<String, String>? = if (bool()) stringMap() else null
 
     fun stringMap(maxSize: Int = 256): Map<String, String> {
         val size = length(maxSize)
