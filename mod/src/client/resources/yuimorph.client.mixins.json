@@ -4,9 +4,8 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "ClientLevelMixin",
-    "EntityMixin",
     "EntityRenderDispatcherMixin",
-    "LivingEntityMixin"
+    "LevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

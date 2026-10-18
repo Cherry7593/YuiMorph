@@ -71,6 +71,13 @@ object MorphClientState {
         return id != S2CSelfDisguise.NO_PROXY && entity.id == id && entity.level() is ClientLevel
     }
 
+    /** 由 Mixin 调用：包装实体查询条件，排除代理实体。没有代理时原样返回，不增加开销。 */
+    @JvmStatic
+    fun <T> excludeProxy(predicate: java.util.function.Predicate<T>): java.util.function.Predicate<T> {
+        if (self.proxyEntityId == S2CSelfDisguise.NO_PROXY) return predicate
+        return java.util.function.Predicate { e -> !(e is Entity && isProxy(e)) && predicate.test(e) }
+    }
+
     /**
      * 由 Mixin 调用：是否跳过渲染。
      * - 第三人称：隐藏自己的玩家模型（由代理实体代替）
