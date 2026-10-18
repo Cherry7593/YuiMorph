@@ -10,6 +10,7 @@ import moe.yui.morph.disguise.DisguiseManager
 import moe.yui.morph.disguise.property.DisguiseProperties
 import moe.yui.morph.disguise.property.EntityLayouts
 import moe.yui.morph.effect.DisguiseEffects
+import moe.yui.morph.effect.DisguiseSounds
 import moe.yui.morph.effect.EntityTraits
 import moe.yui.morph.gui.DisguiseMenu
 import moe.yui.morph.i18n.Messages
@@ -50,6 +51,8 @@ class YuiMorphPlugin : JavaPlugin() {
         private set
     lateinit var effects: DisguiseEffects
         private set
+    lateinit var sounds: DisguiseSounds
+        private set
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -64,13 +67,15 @@ class YuiMorphPlugin : JavaPlugin() {
 
         store = PlayerDataStore(dataFolder, logger)
         disguises = DisguiseManager(this)
-        renderer = DisguiseRenderer(server, disguises.sessions, logger).also { it.register() }
+        sounds = DisguiseSounds(this)
+        renderer = DisguiseRenderer(server, disguises.sessions, logger, sounds).also { it.register() }
 
         requests = RequestManager(this)
-        server.asyncScheduler.runAtFixedRate(this, { requests.purgeExpired() }, 30, 30, TimeUnit.SECONDS)
+        server.asyncScheduler.runAtFixedRate(this, { requests.purgeExpired(); sounds.purgeExpired() }, 5, 5, TimeUnit.SECONDS)
 
         server.pluginManager.registerEvents(PlayerListener(this), this)
         server.pluginManager.registerEvents(DisguiseMenu.MenuListener(), this)
+        server.pluginManager.registerEvents(sounds, this)
         CommandModule.registerAll(this, listOf(PlayerCommands(this), RequestCommands(this), AdminCommands(this)))
 
         // 插件在玩家在线时启用（例如热重载），补加载数据

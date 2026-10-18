@@ -56,6 +56,7 @@ class PlayerListener(private val plugin: YuiMorphPlugin) : Listener {
         plugin.store[event.player.uniqueId]?.current = manager.current(event.player)?.disguise?.toString()
         manager.onQuit(event.player)
         plugin.requests.onQuit(event.player.uniqueId)
+        plugin.sounds.onQuit(event.player.uniqueId)
         plugin.store.unload(event.player.uniqueId)
     }
 

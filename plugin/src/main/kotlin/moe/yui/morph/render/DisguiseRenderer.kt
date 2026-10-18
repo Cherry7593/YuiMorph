@@ -26,6 +26,7 @@ import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import moe.yui.morph.disguise.DisguiseProfile
 import moe.yui.morph.disguise.DisguiseSession
 import moe.yui.morph.disguise.SessionRegistry
+import moe.yui.morph.effect.DisguiseSounds
 import org.bukkit.Server
 import org.bukkit.entity.Player
 import org.bukkit.inventory.EquipmentSlot
@@ -47,6 +48,7 @@ class DisguiseRenderer(
     private val server: Server,
     private val sessions: SessionRegistry,
     private val logger: Logger,
+    private val sounds: DisguiseSounds,
 ) : PacketListenerAbstract(PacketListenerPriority.HIGH) {
 
     private val pm get() = PacketEvents.getAPI().playerManager
@@ -68,6 +70,8 @@ class DisguiseRenderer(
                 PacketType.Play.Server.SPAWN_ENTITY -> onSpawn(event)
                 PacketType.Play.Server.ENTITY_METADATA -> onMetadata(event)
                 PacketType.Play.Server.UPDATE_ATTRIBUTES -> onAttributes(event)
+                PacketType.Play.Server.SOUND_EFFECT -> sounds.rewrite(event)
+                PacketType.Play.Server.ENTITY_SOUND_EFFECT -> sounds.rewriteEntity(event)
             }
         } catch (e: Exception) {
             logger.log(Level.WARNING, "改写数据包失败：${event.packetType}", e)
