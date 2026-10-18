@@ -15,6 +15,11 @@ import net.minecraft.world.phys.Vec3
  * 这样代理实体的插值、走路动画和玩家完全同步。
  */
 object ProxyTicker {
+    /** 正在由我们手动 tick 代理实体。其他路径 tick 代理实体时会被 Mixin 拦下。 */
+    @JvmStatic
+    var isManualTicking = false
+        private set
+
     fun tick(mc: Minecraft) {
         val player = mc.player ?: return
         val proxy = MorphClientState.proxy() ?: return
@@ -29,7 +34,12 @@ object ProxyTicker {
         proxy.xRot = player.xRot
         proxy.yHeadRot = player.yHeadRot
 
-        proxy.tick()
+        isManualTicking = true
+        try {
+            proxy.tick()
+        } finally {
+            isManualTicking = false
+        }
         // tick 中如果有任何逻辑改动了位置，强制贴回玩家
         proxy.setPos(player.x, player.y, player.z)
 
