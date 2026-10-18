@@ -1,6 +1,7 @@
 package moe.yui.morph.client
 
 import com.mojang.blaze3d.platform.InputConstants
+import moe.yui.morph.client.debug.DriftDiagnostics
 import moe.yui.morph.client.gui.ActionScreen
 import moe.yui.morph.client.gui.DisguiseSelectScreen
 import moe.yui.morph.client.net.MorphPayload
@@ -68,6 +69,7 @@ object YuiMorphClient : ClientModInitializer {
 
     private fun onTick(mc: Minecraft) {
         ProxyTicker.tick(mc)
+        DriftDiagnostics.tick(mc)
 
         while (openMenu.consumeClick()) ifAccepted(mc) { mc.gui.setScreen(DisguiseSelectScreen()) }
         while (openActions.consumeClick()) ifAccepted(mc) {

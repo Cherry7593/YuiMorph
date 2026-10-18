@@ -5,7 +5,8 @@
   "client": [
     "ClientLevelMixin",
     "EntityRenderDispatcherMixin",
-    "LevelMixin"
+    "LevelMixin",
+    "VelocityProbeMixin"
   ],
   "injectors": {
     "defaultRequire": 1
