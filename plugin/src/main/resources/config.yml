@@ -19,5 +19,8 @@ disabled-worlds: []
 # 玩家伪装的皮肤缓存时长（小时）。过期后重新向 Mojang 查询，查询失败时继续使用旧皮肤
 skin-cache-hours: 24
 
+# 交换请求的有效期（秒）
+request-timeout-seconds: 60
+
 # 请勿修改
 config-version: 1

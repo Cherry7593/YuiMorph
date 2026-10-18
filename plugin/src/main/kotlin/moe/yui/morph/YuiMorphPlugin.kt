@@ -1,19 +1,25 @@
 package moe.yui.morph
 
-import moe.yui.morph.command.MorphCommands
+import moe.yui.morph.command.AdminCommands
+import moe.yui.morph.command.CommandModule
+import moe.yui.morph.command.PlayerCommands
+import moe.yui.morph.command.RequestCommands
 import moe.yui.morph.config.MorphConfig
 import moe.yui.morph.disguise.DisguiseManager
 import moe.yui.morph.disguise.property.DisguiseProperties
 import moe.yui.morph.disguise.property.EntityLayouts
+import moe.yui.morph.gui.DisguiseMenu
 import moe.yui.morph.i18n.Messages
 import moe.yui.morph.listener.PlayerListener
 import moe.yui.morph.protocol.Protocol
 import moe.yui.morph.render.DisguiseRenderer
 import moe.yui.morph.render.PeMetadata
+import moe.yui.morph.request.RequestManager
 import moe.yui.morph.skin.SkinService
 import moe.yui.morph.storage.PlayerDataStore
 import moe.yui.morph.util.runAsync
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 
 class YuiMorphPlugin : JavaPlugin() {
@@ -34,6 +40,8 @@ class YuiMorphPlugin : JavaPlugin() {
         private set
     lateinit var skins: SkinService
         private set
+    lateinit var requests: RequestManager
+        private set
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -48,8 +56,12 @@ class YuiMorphPlugin : JavaPlugin() {
         disguises = DisguiseManager(this)
         renderer = DisguiseRenderer(server, disguises.sessions, logger).also { it.register() }
 
+        requests = RequestManager(this)
+        server.asyncScheduler.runAtFixedRate(this, { requests.purgeExpired() }, 30, 30, TimeUnit.SECONDS)
+
         server.pluginManager.registerEvents(PlayerListener(this), this)
-        MorphCommands(this).register()
+        server.pluginManager.registerEvents(DisguiseMenu.MenuListener(), this)
+        CommandModule.registerAll(this, listOf(PlayerCommands(this), RequestCommands(this), AdminCommands(this)))
 
         // 插件在玩家在线时启用（例如热重载），补加载数据
         server.onlinePlayers.forEach { p -> runAsync { store.load(p.uniqueId) } }
@@ -79,6 +91,21 @@ class YuiMorphPlugin : JavaPlugin() {
                 logger.log(Level.FINE, "停用时恢复 ${player.name} 失败", e)
             }
         }
+    }
+
+    /**
+     * 修改封禁列表并写回 config.yml。状态没有变化时返回 false。
+     * 多线程同时调用时加锁，避免互相覆盖。
+     */
+    @Synchronized
+    fun setBanned(entry: String, banned: Boolean): Boolean {
+        val list = config.getStringList("banned-disguises").toMutableList()
+        val changed = if (banned) entry !in list && list.add(entry) else list.remove(entry)
+        if (!changed) return false
+        config.set("banned-disguises", list)
+        saveConfig()
+        morphConfig = MorphConfig.load(config)
+        return true
     }
 
     fun reload() {

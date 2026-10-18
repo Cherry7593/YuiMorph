@@ -37,6 +37,7 @@ class PlayerListener(private val plugin: YuiMorphPlugin) : Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     fun onQuit(event: PlayerQuitEvent) {
         manager.onQuit(event.player)
+        plugin.requests.onQuit(event.player.uniqueId)
         plugin.store.unload(event.player.uniqueId)
     }
 

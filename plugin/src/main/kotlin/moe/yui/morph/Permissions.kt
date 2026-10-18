@@ -13,6 +13,9 @@ object Permissions {
     const val ADMIN = "yuimorph.admin"
     /** 使用 /morphprop。部分属性还需要额外权限（见 PropertyDefs）。 */
     const val PROPERTY = "yuimorph.property"
+    const val REQUEST_SEND = "yuimorph.request.send"
+    const val REQUEST_ACCEPT = "yuimorph.request.accept"
+    const val REQUEST_DENY = "yuimorph.request.deny"
 
     private const val MORPH_AS = "yuimorph.morph.as."
 
