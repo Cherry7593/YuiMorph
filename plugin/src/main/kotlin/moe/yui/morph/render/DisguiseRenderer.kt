@@ -9,19 +9,27 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes
 import com.github.retrooper.packetevents.protocol.packettype.PacketType
 import com.github.retrooper.packetevents.protocol.player.Equipment
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot as PeSlot
+import com.github.retrooper.packetevents.protocol.player.GameMode
+import com.github.retrooper.packetevents.protocol.player.TextureProperty
+import com.github.retrooper.packetevents.protocol.player.UserProfile
 import com.github.retrooper.packetevents.util.Vector3d
 import com.github.retrooper.packetevents.wrapper.PacketWrapper
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerInfoRemove
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerInfoUpdate
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetPassengers
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAttributes
 import io.github.retrooper.packetevents.util.SpigotConversionUtil
+import moe.yui.morph.disguise.DisguiseProfile
 import moe.yui.morph.disguise.DisguiseSession
 import moe.yui.morph.disguise.SessionRegistry
+import org.bukkit.Server
 import org.bukkit.entity.Player
 import org.bukkit.inventory.EquipmentSlot
+import java.util.EnumSet
 import java.util.Optional
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -31,11 +39,17 @@ import java.util.logging.Logger
  *
  * 伪装实体沿用玩家的 entity id，所以移动、转头、动画等包不需要处理。
  * 监听器运行在 Netty 线程，只读取 [SessionRegistry]，不访问世界状态。
+ *
+ * 玩家伪装需要客户端先有对应 UUID 的玩家信息，所以会向所有在线玩家发送一个
+ * 不显示在 Tab 列表中的虚拟玩家信息（[broadcastProfile]）。
  */
 class DisguiseRenderer(
+    private val server: Server,
     private val sessions: SessionRegistry,
     private val logger: Logger,
 ) : PacketListenerAbstract(PacketListenerPriority.HIGH) {
+
+    private val pm get() = PacketEvents.getAPI().playerManager
 
     fun register() {
         PacketEvents.getAPI().eventManager.registerListener(this)
@@ -70,13 +84,21 @@ class DisguiseRenderer(
         val packet = WrapperPlayServerSpawnEntity(event)
         val session = sessionFor(event, packet.entityId) ?: return
         packet.entityType = session.entityType
+        session.profile?.let { packet.uuid = Optional.of(it.uuid) }
         event.markForReEncode(true)
+
+        // 服务器随后发出的元数据会被过滤，属性覆盖值要在生成之后补发
+        if (session.metadata.isNotEmpty()) {
+            val user = event.user
+            val meta = WrapperPlayServerEntityMetadata(session.entityId, session.metadata)
+            event.tasksAfterSend.add { user.sendPacketSilently(meta) }
+        }
     }
 
     private fun onMetadata(event: PacketSendEvent) {
         val packet = WrapperPlayServerEntityMetadata(event)
         val session = sessionFor(event, packet.entityId) ?: return
-        val filtered = filterMetadata(packet.entityMetadata)
+        val filtered = filterMetadata(session, packet.entityMetadata)
         if (filtered.isEmpty()) {
             event.isCancelled = true
         } else if (filtered.size != packet.entityMetadata.size) {
@@ -92,12 +114,13 @@ class DisguiseRenderer(
     }
 
     /**
-     * 只保留所有生物通用的字段（索引 0..14）。
+     * 只保留所有生物通用的字段（索引 0..14），并且去掉被属性覆盖的字段。
      * 血量只在 ≤ 0 时转发（用于死亡动画），否则伪装实体会按玩家血量显示受损外观。
      */
-    private fun filterMetadata(data: List<EntityData<*>>): List<EntityData<*>> = data.filter {
+    private fun filterMetadata(session: DisguiseSession, data: List<EntityData<*>>): List<EntityData<*>> = data.filter {
         when {
             it.index > EntityIndex.LAST_COMMON -> false
+            it.index in session.overriddenIndices -> false
             it.index == EntityIndex.HEALTH -> (it.value as? Float ?: 1f) <= 0f
             else -> true
         }
@@ -106,27 +129,68 @@ class DisguiseRenderer(
     // ---------------- 主动刷新：变身 / 解除时重新生成实体 ----------------
 
     /**
-     * 对当前所有观察者重新生成该玩家的实体（伪装实体或玩家本体）。
+     * 从 [old] 切换到 [new]（null 表示玩家本体），对所有观察者生效。
      * 必须在玩家所在区域线程调用。
      */
+    fun apply(player: Player, old: DisguiseSession?, new: DisguiseSession?) {
+        new?.profile?.let { broadcastProfile(it, except = player) }
+        refresh(player, new)
+        val oldProfile = old?.profile
+        if (oldProfile != null && oldProfile.uuid != new?.profile?.uuid) broadcastProfileRemoval(oldProfile)
+    }
+
+    /** 对当前所有观察者重新生成该玩家的实体。必须在玩家所在区域线程调用。 */
     fun refresh(player: Player, session: DisguiseSession?) {
         val viewers = player.trackedBy
         if (viewers.isEmpty()) return
-
         val packets = buildList<PacketWrapper<*>> {
             add(WrapperPlayServerDestroyEntities(player.entityId))
             addAll(spawnPackets(player, session))
         }
-        val pm = PacketEvents.getAPI().playerManager
-        for (viewer in viewers) {
-            // 假人插件（FakePlayer 等）的玩家没有真实连接，PacketEvents 没有接管，跳过
-            if (pm.getUser(viewer) == null) continue
-            try {
-                // 用 silently 发送，避免被自己的监听器再处理一遍
-                packets.forEach { pm.sendPacketSilently(viewer, it) }
-            } catch (e: Exception) {
-                logger.log(Level.FINE, "向 ${viewer.name} 发送伪装刷新失败", e)
-            }
+        viewers.forEach { send(it, packets) }
+    }
+
+    /** 让所有在线玩家（除 [except]）知道这个虚拟档案，玩家伪装的实体才能生成。 */
+    fun broadcastProfile(profile: DisguiseProfile, except: Player?) {
+        val packet = profileAdd(profile)
+        server.onlinePlayers.forEach { if (it != except) send(it, listOf(packet)) }
+    }
+
+    fun broadcastProfileRemoval(profile: DisguiseProfile) {
+        val packet = WrapperPlayServerPlayerInfoRemove(profile.uuid)
+        server.onlinePlayers.forEach { send(it, listOf(packet)) }
+    }
+
+    /** 新进服的玩家需要补发所有玩家伪装的虚拟档案。 */
+    fun sendProfilesTo(viewer: Player) {
+        val packets = sessions.all().filter { it.playerId != viewer.uniqueId }.mapNotNull { it.profile }.map(::profileAdd)
+        if (packets.isNotEmpty()) send(viewer, packets)
+    }
+
+    private fun profileAdd(profile: DisguiseProfile): WrapperPlayServerPlayerInfoUpdate {
+        val textures = profile.skin?.let { listOf(TextureProperty("textures", it.value, it.signature)) }.orEmpty()
+        val info = WrapperPlayServerPlayerInfoUpdate.PlayerInfo(
+            UserProfile(profile.uuid, profile.name, textures), false, 0, GameMode.SURVIVAL, null, null,
+        )
+        return WrapperPlayServerPlayerInfoUpdate(
+            EnumSet.of(
+                WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER,
+                WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LISTED,
+                WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_GAME_MODE,
+                WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LATENCY,
+            ),
+            info,
+        )
+    }
+
+    private fun send(viewer: Player, packets: List<PacketWrapper<*>>) {
+        // 假人插件（FakePlayer 等）的玩家没有真实连接，PacketEvents 没有接管，跳过
+        if (pm.getUser(viewer) == null) return
+        try {
+            // 用 silently 发送，避免被自己的监听器再处理一遍
+            packets.forEach { pm.sendPacketSilently(viewer, it) }
+        } catch (e: Exception) {
+            logger.log(Level.FINE, "向 ${viewer.name} 发送伪装数据失败", e)
         }
     }
 
@@ -134,12 +198,17 @@ class DisguiseRenderer(
         val loc = player.location
         val vel = player.velocity
         val type = session?.entityType ?: EntityTypes.PLAYER
-        val metadata = if (session == null) EntitySnapshot.realPlayer(player) else EntitySnapshot.common(player)
+        val uuid = session?.profile?.uuid ?: player.uniqueId
+        val metadata = if (session == null) {
+            EntitySnapshot.realPlayer(player)
+        } else {
+            EntitySnapshot.common(player).filter { it.index !in session.overriddenIndices } + session.metadata
+        }
 
         return buildList {
             add(
                 WrapperPlayServerSpawnEntity(
-                    player.entityId, Optional.of(player.uniqueId), type,
+                    player.entityId, Optional.of(uuid), type,
                     Vector3d(loc.x, loc.y, loc.z), loc.pitch, loc.yaw, loc.yaw, 0,
                     Optional.of(Vector3d(vel.x, vel.y, vel.z)),
                 ),

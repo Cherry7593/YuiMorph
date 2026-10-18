@@ -14,15 +14,19 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 /** 单个玩家的数据，所有字段线程安全。 */
-class PlayerData(unlocked: Collection<String>) {
+class PlayerData(unlocked: Collection<String>, properties: Map<String, Map<String, String>>) {
     /** 已解锁的伪装 ID（字符串形式，未知 ID 也保留，防止版本回退时丢数据）。 */
     val unlocked: MutableSet<String> = ConcurrentHashMap.newKeySet<String>().apply { addAll(unlocked) }
+
+    /** 每个伪装上次使用的属性：伪装 ID -> (属性键 -> 值)。内层 Map 不可变，修改时整体替换。 */
+    val properties: MutableMap<String, Map<String, String>> = ConcurrentHashMap(properties)
 }
 
 /** 磁盘格式。字段名就是 JSON 键，改名前要考虑兼容旧数据。Gson 可能写入 null，所以字段可空。 */
 private class PlayerDataFile(
     var version: Int = 1,
     var unlocked: List<String>? = null,
+    var properties: Map<String, Map<String, String>>? = null,
 )
 
 /**
@@ -41,7 +45,7 @@ class PlayerDataStore(dataFolder: File, private val logger: Logger) {
     operator fun get(uuid: UUID): PlayerData? = cache[uuid]
 
     /** 阻塞读取磁盘并缓存。只能在异步线程调用。 */
-    fun load(uuid: UUID): PlayerData = cache.computeIfAbsent(uuid) { PlayerData(read(it).unlocked.orEmpty()) }
+    fun load(uuid: UUID): PlayerData = cache.computeIfAbsent(uuid) { read(it).let { f -> PlayerData(f.unlocked.orEmpty(), f.properties.orEmpty()) } }
 
     private fun read(uuid: UUID): PlayerDataFile {
         val file = file(uuid)
@@ -60,7 +64,7 @@ class PlayerDataStore(dataFolder: File, private val logger: Logger) {
     /** 异步保存玩家当前数据。 */
     fun save(uuid: UUID) {
         val data = cache[uuid] ?: return
-        val snapshot = PlayerDataFile(unlocked = data.unlocked.sorted())
+        val snapshot = PlayerDataFile(unlocked = data.unlocked.sorted(), properties = data.properties.toSortedMap())
         io.execute { write(uuid, snapshot) }
     }
 

@@ -9,6 +9,7 @@ data class MorphConfig(
     val unlockOnKill: Boolean,
     val bannedDisguises: Set<String>,
     val disabledWorlds: Set<String>,
+    val skinCacheHours: Long = 24,
 ) {
     fun isBanned(id: DisguiseId): Boolean =
         id.toString() in bannedDisguises || "${id.namespace}:@all" in bannedDisguises
@@ -21,6 +22,7 @@ data class MorphConfig(
             unlockOnKill = config.getBoolean("unlock-on-kill", true),
             bannedDisguises = config.getStringList("banned-disguises").map { it.trim() }.toSet(),
             disabledWorlds = config.getStringList("disabled-worlds").toSet(),
+            skinCacheHours = config.getLong("skin-cache-hours", 24).coerceAtLeast(0),
         )
     }
 }

@@ -30,6 +30,8 @@ class PlayerListener(private val plugin: YuiMorphPlugin) : Listener {
     fun onJoin(event: PlayerJoinEvent) {
         val uuid = event.player.uniqueId
         if (plugin.store[uuid] == null) plugin.runAsync { plugin.store.load(uuid) }
+        // 补发其他人的玩家伪装档案，否则看不到他们的伪装
+        plugin.renderer.sendProfilesTo(event.player)
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

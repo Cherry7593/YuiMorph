@@ -26,6 +26,15 @@ permissions:
   yuimorph.morph.any:
     description: 不需要解锁即可使用任意伪装
     default: op
+  yuimorph.property:
+    description: 使用 /morphprop 设置伪装属性
+    default: true
+  yuimorph.property.name:
+    description: 给伪装设置自定义名字
+    default: true
+  yuimorph.property.skin:
+    description: 让玩家伪装使用另一个玩家的皮肤
+    default: op
   yuimorph.admin:
     description: 使用 /yuimorph 管理命令
     default: op

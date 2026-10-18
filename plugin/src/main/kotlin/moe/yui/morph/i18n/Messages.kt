@@ -22,6 +22,9 @@ class Messages private constructor(private val yaml: YamlConfiguration) {
     fun get(key: String, vararg placeholders: TagResolver): Component =
         mini.deserialize(yaml.getString(key) ?: key, *placeholders)
 
+    /** 未解析的原始文本，用于嵌入其他消息的占位符。 */
+    fun raw(key: String): String = yaml.getString(key) ?: key
+
     fun send(target: Audience, key: String, vararg placeholders: TagResolver) {
         target.sendMessage(prefix.append(get(key, *placeholders)))
     }

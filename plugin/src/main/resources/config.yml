@@ -16,5 +16,8 @@ banned-disguises:
 # 在这些世界中不能伪装（进入这些世界时会自动解除伪装）
 disabled-worlds: []
 
+# 玩家伪装的皮肤缓存时长（小时）。过期后重新向 Mojang 查询，查询失败时继续使用旧皮肤
+skin-cache-hours: 24
+
 # 请勿修改
 config-version: 1

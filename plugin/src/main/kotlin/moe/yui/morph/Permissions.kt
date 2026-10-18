@@ -11,6 +11,8 @@ object Permissions {
     /** 不需要解锁就能使用任意伪装。 */
     const val MORPH_ANY = "yuimorph.morph.any"
     const val ADMIN = "yuimorph.admin"
+    /** 使用 /morphprop。部分属性还需要额外权限（见 PropertyDefs）。 */
+    const val PROPERTY = "yuimorph.property"
 
     private const val MORPH_AS = "yuimorph.morph.as."
 

@@ -34,6 +34,17 @@ YuiMorph/
 - 变身或取消时 → 对当前观察者先发 `DESTROY_ENTITIES`，再按新状态重新生成
 - 只用 PacketEvents 和 Folia 调度 API，所有状态都放在线程安全的容器里，不在 Netty 线程里读写世界
 
+## 实体元数据布局表
+
+`plugin/src/main/resources/entity-layouts.tsv` 由 `scripts/gen-entity-layouts.py` 从服务端 jar 的字节码生成，记录每种实体的全部同步字段。属性按字段名（例如 `Sheep.DATA_WOOL_ID`）查找索引，不写死数字。
+
+**升级 MC 版本时必须重新生成**：
+
+```bash
+python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版本>.jar
+./gradlew :plugin:test   # 包含“任何属性都不会发出越界索引”的全量检查
+```
+
 ## 已知限制（M1）
 
 - 伪装者自己看不到自己的伪装（要等 M6 的客户端 Mod）
@@ -46,7 +57,7 @@ YuiMorph/
 |---|---|---|
 | M0 ✅ | 多模块骨架，三个模块都能编译；插件能在测试服上加载 | — |
 | M1 ✅ | 伪装成生物（发包渲染）、`/morph` `/unmorph`、权限、JSON 存储、击杀解锁 | A1 B1 C3/C4 |
-| M2 | 伪装成玩家（皮肤）、伪装属性（变种 / 颜色 / 大小 / 名字） | A1 A3 |
+| M2 🟡 | 伪装成玩家（皮肤）、伪装属性（变种 / 颜色 / 大小 / 名字）（代码完成、测试服验证通过，待客户端目视验收） | A1 A3 |
 | M3 | 箱子 GUI、交换请求、管理命令、封禁列表、语言文件 | B2 B5 C2 |
 | M4 | 碰撞箱、血量缩放、环境音效、离线恢复、强制伪装 | A5 A6 A7 |
 | M5 | 伪装动作 | A4 |

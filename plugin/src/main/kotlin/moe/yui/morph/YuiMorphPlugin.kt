@@ -3,10 +3,14 @@ package moe.yui.morph
 import moe.yui.morph.command.MorphCommands
 import moe.yui.morph.config.MorphConfig
 import moe.yui.morph.disguise.DisguiseManager
+import moe.yui.morph.disguise.property.DisguiseProperties
+import moe.yui.morph.disguise.property.EntityLayouts
 import moe.yui.morph.i18n.Messages
 import moe.yui.morph.listener.PlayerListener
 import moe.yui.morph.protocol.Protocol
 import moe.yui.morph.render.DisguiseRenderer
+import moe.yui.morph.render.PeMetadata
+import moe.yui.morph.skin.SkinService
 import moe.yui.morph.storage.PlayerDataStore
 import moe.yui.morph.util.runAsync
 import org.bukkit.plugin.java.JavaPlugin
@@ -26,14 +30,23 @@ class YuiMorphPlugin : JavaPlugin() {
         private set
     lateinit var renderer: DisguiseRenderer
         private set
+    lateinit var properties: DisguiseProperties
+        private set
+    lateinit var skins: SkinService
+        private set
 
     override fun onEnable() {
         saveDefaultConfig()
         reload()
 
+        val layouts = getResource("entity-layouts.tsv")?.use(EntityLayouts::load)
+            ?: error("插件 jar 缺少 entity-layouts.tsv")
+        properties = DisguiseProperties(layouts, PeMetadata)
+        skins = SkinService(this) { morphConfig.skinCacheHours * 3_600_000L }.also { it.load() }
+
         store = PlayerDataStore(dataFolder, logger)
         disguises = DisguiseManager(this)
-        renderer = DisguiseRenderer(disguises.sessions, logger).also { it.register() }
+        renderer = DisguiseRenderer(server, disguises.sessions, logger).also { it.register() }
 
         server.pluginManager.registerEvents(PlayerListener(this), this)
         MorphCommands(this).register()
@@ -41,7 +54,7 @@ class YuiMorphPlugin : JavaPlugin() {
         // 插件在玩家在线时启用（例如热重载），补加载数据
         server.onlinePlayers.forEach { p -> runAsync { store.load(p.uniqueId) } }
 
-        logger.info("YuiMorph ${pluginMeta.version} 已启用（协议版本 ${Protocol.VERSION}）")
+        logger.info("YuiMorph ${pluginMeta.version} 已启用（协议版本 ${Protocol.VERSION}，实体布局 ${layouts.size} 种）")
     }
 
     override fun onDisable() {
@@ -49,6 +62,7 @@ class YuiMorphPlugin : JavaPlugin() {
             restoreAll()
             renderer.unregister()
         }
+        if (::skins.isInitialized) skins.shutdown()
         if (::store.isInitialized) store.shutdown()
     }
 

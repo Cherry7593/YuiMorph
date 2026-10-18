@@ -14,8 +14,23 @@ morph:
   banned: "<red><disguise> 已被服务器禁用</red>"
   world-disabled: "<red>当前世界不允许伪装</red>"
   world-disabled-removed: "<gray>当前世界不允许伪装，已为你解除伪装</gray>"
-  player-not-supported: "<red>暂不支持伪装成玩家</red>"
+  fetching-skin: "<gray>正在获取 <name> 的皮肤…</gray>"
+  skin-failed: "<yellow>没有获取到 <name> 的皮肤，将使用默认皮肤</yellow>"
   players-only: "<red>只有玩家才能使用这个命令</red>"
+
+property:
+  not-disguised: "<gray>你需要先伪装才能设置属性</gray>"
+  none: "<gray><disguise> 没有可以设置的属性</gray>"
+  header: "<white><disguise> 的属性（/morphprop 属性 值，只写属性名则重置）：</white>"
+  entry: "<#ff9ecf><key></#ff9ecf> <dark_gray>=</dark_gray> <white><value></white> <dark_gray>[<values>]</dark_gray>"
+  # 下面两条会嵌入其他消息，请只写纯文本
+  default: "默认"
+  free-text: "任意文本"
+  set: "<white>已将 <#ff9ecf><key></#ff9ecf> 设为 <value></white>"
+  reset: "<white>已重置 <#ff9ecf><key></#ff9ecf></white>"
+  unknown-key: "<red>当前伪装没有属性 <key></red>"
+  invalid-value: "<red><key> 不能设为 <value></red>"
+  no-permission: "<red>你没有权限设置 <key></red>"
 
 unlock:
   new: "<white>解锁了新伪装：<#ff9ecf><disguise></#ff9ecf></white>"

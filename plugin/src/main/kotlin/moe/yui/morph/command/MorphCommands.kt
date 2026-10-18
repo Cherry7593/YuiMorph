@@ -14,6 +14,7 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import moe.yui.morph.Permissions
 import moe.yui.morph.YuiMorphPlugin
 import moe.yui.morph.disguise.DisguiseId
+import moe.yui.morph.disguise.DisguiseManager
 import moe.yui.morph.i18n.ph
 import moe.yui.morph.util.runOnRegion
 import org.bukkit.entity.Player
@@ -35,6 +36,7 @@ class MorphCommands(private val plugin: YuiMorphPlugin) {
             val r = event.registrar()
             r.register(morph(), "伪装成生物或玩家")
             r.register(unmorph(), "解除伪装")
+            r.register(morphProp(), "设置当前伪装的属性", listOf("mprop"))
             r.register(admin(), "YuiMorph 管理命令", listOf("ym"))
         }
     }
@@ -61,6 +63,71 @@ class MorphCommands(private val plugin: YuiMorphPlugin) {
         .requires { it.sender.hasPermission(Permissions.UNMORPH) }
         .executes { ctx -> withPlayer(ctx) { p -> p.runOnRegion(plugin) { manager.unmorph(p) } } }
         .build()
+
+    // ---------------- /morphprop [属性] [值] ----------------
+
+    private fun morphProp(): LiteralCommandNode<CommandSourceStack> = Commands.literal("morphprop")
+        .requires { it.sender.hasPermission(Permissions.PROPERTY) }
+        .executes { ctx -> withPlayer(ctx) { listProperties(it) } }
+        .then(
+            Commands.argument("key", StringArgumentType.word())
+                .suggests { ctx, builder ->
+                    val player = ctx.source.executor as? Player ?: ctx.source.sender as? Player
+                    val session = player?.let(manager::current)
+                    if (session != null) {
+                        plugin.properties.keys(DisguiseManager.typeKey(session.disguise))
+                            .filter { it.name.startsWith(builder.remainingLowerCase) }
+                            .forEach { builder.suggest(it.name) }
+                    }
+                    builder.buildFuture()
+                }
+                // 只写属性名：重置为默认
+                .executes { ctx ->
+                    withPlayer(ctx) { p ->
+                        val key = StringArgumentType.getString(ctx, "key")
+                        p.runOnRegion(plugin) { manager.setProperty(p, key, null) }
+                    }
+                }
+                .then(
+                    Commands.argument("value", StringArgumentType.greedyString())
+                        .suggests { ctx, builder ->
+                            val player = ctx.source.executor as? Player ?: ctx.source.sender as? Player
+                            val session = player?.let(manager::current)
+                            val key = StringArgumentType.getString(ctx, "key")
+                            session?.let { plugin.properties.key(DisguiseManager.typeKey(it.disguise), key) }
+                                ?.let(plugin.properties::values)?.filter { it.startsWith(builder.remainingLowerCase) }?.forEach(builder::suggest)
+                            builder.buildFuture()
+                        }
+                        .executes { ctx ->
+                            withPlayer(ctx) { p ->
+                                val key = StringArgumentType.getString(ctx, "key")
+                                val value = StringArgumentType.getString(ctx, "value")
+                                p.runOnRegion(plugin) { manager.setProperty(p, key, value) }
+                            }
+                        },
+                ),
+        )
+        .build()
+
+    private fun listProperties(player: Player) {
+        val session = manager.current(player) ?: run {
+            msg.send(player, "property.not-disguised")
+            return
+        }
+        val keys = plugin.properties.keys(DisguiseManager.typeKey(session.disguise))
+        if (keys.isEmpty()) {
+            msg.send(player, "property.none", ph("disguise", session.disguise.displayName()))
+            return
+        }
+        msg.send(player, "property.header", ph("disguise", session.disguise.displayName()))
+        keys.forEach { key ->
+            val current = session.properties[key.name] ?: msg.raw("property.default")
+            val values = plugin.properties.values(key)?.joinToString(" / ") ?: msg.raw("property.free-text")
+            player.sendMessage(
+                msg.get("property.entry", ph("key", key.name), ph("value", current), ph("values", values)),
+            )
+        }
+    }
 
     private fun listUnlocked(player: Player) {
         val list = manager.available(player)
