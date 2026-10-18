@@ -47,9 +47,19 @@ python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版
 
 ## 已知限制（M1）
 
-- 伪装者自己看不到自己的伪装（要等 M6 的客户端 Mod）
+- 没装客户端 Mod 的伪装者看不到自己的伪装（装了 Mod 后按 F5 可以看到）
 - 脚步声沿用玩家的（由方块决定，和生物一致）；受击音效靠坐标匹配改写，极少数同一刻同一位置多人受伤时可能漏改
 - 插件停用时只能尽力恢复玩家本体（Folia 停用阶段不能调度区域任务），失败时重新进入视野就会恢复
+
+## 客户端兼容性经验
+
+代理实体和玩家完全重叠，必须对本地物理和准星「不存在」。不要只拦入口，要拦动作本身：
+
+- 很多生物重写 `isPushable` / `isPickable` / `canBeCollidedWith` 且不调用父类，在基类上打补丁会被绕过
+- **EntityCulling** 会用自己的 `basicTick` tick 被剔除（不渲染）的实体，绕过 `ClientLevel#tickNonPassenger`
+- **Lithium** 替换了实体查询，绕过 `Level#getEntities`
+
+当前做法：代理实体的 `tick` / `aiStep` 只允许在 `ProxyTicker` 手动 tick 时运行；`pushEntities`、`push(Entity)`、`canCollideWith` 对代理实体一律无效。
 
 ## 里程碑
 
@@ -61,4 +71,4 @@ python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版
 | M3 ✅ | 箱子 GUI、交换请求、管理命令、封禁列表、语言文件 | B2 B5 C2 |
 | M4 ✅ | 碰撞箱、血量缩放、环境音效、离线恢复、强制伪装 | A5 A6 A7 |
 | M5 ✅ | 伪装动作 | A4 |
-| M6 🟡 | 协议与 Fabric Mod：自身伪装渲染、选择界面、快捷键、HUD（代码完成、构建通过，待客户端联调） | G2 |
+| M6 ✅ | 协议与 Fabric Mod：自身伪装渲染、选择界面、快捷键、HUD | G2 |
