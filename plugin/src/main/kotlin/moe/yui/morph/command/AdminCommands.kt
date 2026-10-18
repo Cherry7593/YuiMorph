@@ -126,6 +126,7 @@ class AdminCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
                 }
                 msg.send(sender, if (banned) "admin.banned" else "admin.unbanned", ph("id", entry))
                 if (banned) kickFromBanned()
+                plugin.client.syncAvailableToAll()
                 Command.SINGLE_SUCCESS
             },
     )

@@ -57,6 +57,7 @@ class PlayerListener(private val plugin: YuiMorphPlugin) : Listener {
         manager.onQuit(event.player)
         plugin.requests.onQuit(event.player.uniqueId)
         plugin.sounds.onQuit(event.player.uniqueId)
+        plugin.client.onQuit(event.player.uniqueId)
         plugin.store.unload(event.player.uniqueId)
     }
 
@@ -65,7 +66,11 @@ class PlayerListener(private val plugin: YuiMorphPlugin) : Listener {
     fun onRespawn(event: PlayerPostRespawnEvent) {
         val player = event.player
         manager.syncEntityId(player)
-        manager.current(player)?.let { plugin.effects.apply(player, it) }
+        manager.current(player)?.let {
+            plugin.effects.apply(player, it)
+            // 重生后客户端世界重建，代理实体需要重新生成
+            plugin.renderer.respawnProxy(player, it)
+        }
     }
 
     /** 死亡时解除伪装（强制伪装不受影响）。 */
@@ -81,6 +86,7 @@ class PlayerListener(private val plugin: YuiMorphPlugin) : Listener {
     fun onChangeWorld(event: PlayerChangedWorldEvent) {
         val player = event.player
         manager.syncEntityId(player)
+        manager.current(player)?.let { plugin.renderer.respawnProxy(player, it) }
         if (manager.current(player) != null && plugin.morphConfig.isWorldDisabled(player.world.name)) {
             manager.unmorph(player, silent = true, force = true)
             plugin.messages.send(player, "morph.world-disabled-removed")

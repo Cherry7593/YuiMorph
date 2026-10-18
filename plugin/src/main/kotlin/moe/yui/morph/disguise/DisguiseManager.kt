@@ -145,6 +145,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
         sessions.put(session)
         plugin.renderer.apply(player, old, session)
         plugin.effects.apply(player, session)
+        plugin.client.onDisguiseChanged(player, session)
     }
 
     /** 解除伪装。没有伪装时返回 false。[force] 为 true 时无视强制伪装（管理员、死亡等）。 */
@@ -162,6 +163,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
         }
         plugin.renderer.apply(player, old, null)
         plugin.effects.clear(player)
+        plugin.client.onDisguiseChanged(player, null)
         if (!silent) msg.send(player, "morph.unmorph")
         return true
     }
@@ -230,6 +232,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
         if (isUnlocked(player, id)) return false
         data.unlocked.add(id.toString())
         plugin.store.save(player.uniqueId)
+        plugin.client.syncAvailable(player)
         if (notify) msg.send(player, "unlock.new", ph("disguise", id.displayName()))
         return true
     }
@@ -239,6 +242,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
         val text = id.toString()
         if (!data.unlocked.removeIf { it.equals(text, ignoreCase = id is DisguiseId.Player) }) return false
         plugin.store.save(player.uniqueId)
+        plugin.client.syncAvailable(player)
         if (current(player)?.disguise == id) unmorph(player, force = true)
         return true
     }

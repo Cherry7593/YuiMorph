@@ -20,9 +20,9 @@ class PacketCodecTest {
         listOf(
             S2CHello(Protocol.VERSION, true, "0.1.0"),
             S2CUnlockedSync(true, listOf("minecraft:pig", "player:中文名"), emptyList()),
-            S2CSelfDisguise("minecraft:sheep", "羊", mapOf("color" to "pink"), listOf("eat")),
-            S2CSelfDisguise(null, null, emptyMap(), emptyList()),
-            S2CPlayAction("roar"),
+            S2CSelfDisguise("minecraft:sheep", null, mapOf("color" to "pink"), listOf("sit", "stop"), -1001),
+            S2CSelfDisguise("player:Notch", "Notch", emptyMap(), listOf("lay"), -1002),
+            S2CSelfDisguise.NONE,
         ).forEach { assertEquals(it, PacketCodec.decodeS2C(PacketCodec.encode(it))) }
     }
 

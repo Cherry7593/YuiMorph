@@ -1,6 +1,7 @@
 package moe.yui.morph
 
 import moe.yui.morph.action.ActionManager
+import moe.yui.morph.client.ClientBridge
 import moe.yui.morph.command.ActionCommands
 import moe.yui.morph.command.AdminCommands
 import moe.yui.morph.command.CommandModule
@@ -59,6 +60,8 @@ class YuiMorphPlugin : JavaPlugin() {
         private set
     lateinit var actions: ActionManager
         private set
+    lateinit var client: ClientBridge
+        private set
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -77,6 +80,7 @@ class YuiMorphPlugin : JavaPlugin() {
         sounds = DisguiseSounds(this)
         renderer = DisguiseRenderer(server, disguises.sessions, logger, sounds).also { it.register() }
 
+        client = ClientBridge(this).also { it.register() }
         requests = RequestManager(this)
         server.asyncScheduler.runAtFixedRate(this, { requests.purgeExpired(); sounds.purgeExpired() }, 5, 5, TimeUnit.SECONDS)
 
@@ -93,6 +97,7 @@ class YuiMorphPlugin : JavaPlugin() {
     }
 
     override fun onDisable() {
+        if (::client.isInitialized) client.unregister()
         if (::renderer.isInitialized) {
             restoreAll()
             renderer.unregister()

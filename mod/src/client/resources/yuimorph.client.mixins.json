@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "moe.yui.morph.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ClientLevelMixin",
+    "EntityMixin",
+    "EntityRenderDispatcherMixin",
+    "LivingEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

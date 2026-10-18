@@ -1,0 +1,36 @@
+{
+  "key.category.yuimorph.main": "YuiMorph 伪装",
+  "key.yuimorph.open_menu": "打开伪装选择",
+  "key.yuimorph.actions": "伪装动作",
+  "key.yuimorph.unmorph": "解除伪装",
+
+  "yuimorph.screen.select.title": "选择伪装",
+  "yuimorph.screen.select.search": "搜索伪装…",
+  "yuimorph.screen.select.unmorph": "解除伪装",
+  "yuimorph.screen.select.empty": "还没有可用的伪装，去击杀生物解锁吧",
+  "yuimorph.screen.actions.title": "伪装动作",
+  "yuimorph.screen.actions.header": "%s 的动作",
+  "yuimorph.screen.actions.empty": "当前伪装没有可播放的动作",
+
+  "yuimorph.hud.disguised": "伪装：%s",
+  "yuimorph.message.not_disguised": "你当前没有伪装",
+  "yuimorph.message.server_unsupported": "这个服务器没有启用 YuiMorph",
+
+  "yuimorph.action.sit": "坐下",
+  "yuimorph.action.sleep": "睡觉",
+  "yuimorph.action.lie": "躺下",
+  "yuimorph.action.lay": "躺下",
+  "yuimorph.action.peek": "探头",
+  "yuimorph.action.open": "打开",
+  "yuimorph.action.dance": "跳舞",
+  "yuimorph.action.roll": "缩成球",
+  "yuimorph.action.sniff": "嗅探",
+  "yuimorph.action.dig": "挖掘",
+  "yuimorph.action.eat": "吐舌头",
+  "yuimorph.action.croak": "鸣叫",
+  "yuimorph.action.roar": "怒吼",
+  "yuimorph.action.inflate": "膨胀",
+  "yuimorph.action.activate": "激活",
+  "yuimorph.action.crawl": "爬行",
+  "yuimorph.action.stop": "停止"
+}

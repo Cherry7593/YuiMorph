@@ -1,0 +1,36 @@
+{
+  "key.category.yuimorph.main": "YuiMorph",
+  "key.yuimorph.open_menu": "Open disguise menu",
+  "key.yuimorph.actions": "Disguise actions",
+  "key.yuimorph.unmorph": "Undisguise",
+
+  "yuimorph.screen.select.title": "Choose a disguise",
+  "yuimorph.screen.select.search": "Search…",
+  "yuimorph.screen.select.unmorph": "Undisguise",
+  "yuimorph.screen.select.empty": "No disguises yet. Defeat mobs to unlock them!",
+  "yuimorph.screen.actions.title": "Disguise actions",
+  "yuimorph.screen.actions.header": "Actions of %s",
+  "yuimorph.screen.actions.empty": "This disguise has no actions",
+
+  "yuimorph.hud.disguised": "Disguised as %s",
+  "yuimorph.message.not_disguised": "You are not disguised",
+  "yuimorph.message.server_unsupported": "YuiMorph is not enabled on this server",
+
+  "yuimorph.action.sit": "Sit",
+  "yuimorph.action.sleep": "Sleep",
+  "yuimorph.action.lie": "Lie down",
+  "yuimorph.action.lay": "Lie down",
+  "yuimorph.action.peek": "Peek",
+  "yuimorph.action.open": "Open",
+  "yuimorph.action.dance": "Dance",
+  "yuimorph.action.roll": "Roll up",
+  "yuimorph.action.sniff": "Sniff",
+  "yuimorph.action.dig": "Dig",
+  "yuimorph.action.eat": "Tongue",
+  "yuimorph.action.croak": "Croak",
+  "yuimorph.action.roar": "Roar",
+  "yuimorph.action.inflate": "Puff up",
+  "yuimorph.action.activate": "Activate",
+  "yuimorph.action.crawl": "Crawl",
+  "yuimorph.action.stop": "Stop"
+}

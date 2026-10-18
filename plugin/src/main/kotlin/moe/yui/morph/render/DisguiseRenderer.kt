@@ -31,6 +31,9 @@ import org.bukkit.Server
 import org.bukkit.entity.Player
 import org.bukkit.inventory.EquipmentSlot
 import java.util.EnumSet
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.Optional
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -52,6 +55,15 @@ class DisguiseRenderer(
 ) : PacketListenerAbstract(PacketListenerPriority.HIGH) {
 
     private val pm get() = PacketEvents.getAPI().playerManager
+
+    /**
+     * 装了客户端 Mod 的玩家各有一个只发给本人的「代理实体」，用于第三人称看到自己的伪装。
+     * 代理 ID 用负数，不会和服务器实体冲突。
+     */
+    private data class Proxy(val entityId: Int, val uuid: UUID)
+
+    private val proxies = ConcurrentHashMap<UUID, Proxy>()
+    private val proxyIds = AtomicInteger(-1000)
 
     fun register() {
         PacketEvents.getAPI().eventManager.registerListener(this)
@@ -103,7 +115,18 @@ class DisguiseRenderer(
 
     private fun onMetadata(event: PacketSendEvent) {
         val packet = WrapperPlayServerEntityMetadata(event)
-        val session = sessionFor(event, packet.entityId) ?: return
+        val any = sessions.byEntityId(packet.entityId) ?: return
+        if (event.user.uuid == any.playerId) {
+            // 发给本人的自身元数据（潜行、姿态等）同步一份给代理实体，本身不改
+            val proxy = proxies[any.playerId] ?: return
+            val filtered = filterMetadata(any, packet.entityMetadata)
+            if (filtered.isNotEmpty()) {
+                val copy = WrapperPlayServerEntityMetadata(proxy.entityId, filtered)
+                event.tasksAfterSend.add { event.user.sendPacketSilently(copy) }
+            }
+            return
+        }
+        val session = any
         val filtered = filterMetadata(session, packet.entityMetadata)
         if (filtered.isEmpty()) {
             event.isCancelled = true
@@ -141,6 +164,7 @@ class DisguiseRenderer(
     fun apply(player: Player, old: DisguiseSession?, new: DisguiseSession?) {
         new?.profile?.let { broadcastProfile(it, except = player) }
         refresh(player, new)
+        if (proxies.containsKey(player.uniqueId)) respawnProxy(player, new)
         val oldProfile = old?.profile
         if (oldProfile != null && oldProfile.uuid != new?.profile?.uuid) broadcastProfileRemoval(oldProfile)
     }
@@ -161,6 +185,42 @@ class DisguiseRenderer(
         if (data.isEmpty()) return
         val packet = WrapperPlayServerEntityMetadata(player.entityId, data)
         player.trackedBy.forEach { send(it, listOf(packet)) }
+        proxies[player.uniqueId]?.let { send(player, listOf(WrapperPlayServerEntityMetadata(it.entityId, data))) }
+    }
+
+    // ---------------- 代理实体（客户端 Mod） ----------------
+
+    /** 为装了 Mod 的玩家启用代理，返回代理 ID。 */
+    fun enableProxy(player: Player): Int =
+        proxies.computeIfAbsent(player.uniqueId) { Proxy(proxyIds.getAndDecrement(), UUID.randomUUID()) }.entityId
+
+    fun disableProxy(uuid: UUID) {
+        proxies.remove(uuid)
+    }
+
+    fun proxyId(uuid: UUID): Int? = proxies[uuid]?.entityId
+
+    /**
+     * 给本人重新生成代理实体（[session] 为 null 时只销毁）。必须在玩家所在区域线程调用。
+     * 换世界、重生后客户端会清空实体，也要调用。
+     */
+    fun respawnProxy(player: Player, session: DisguiseSession?) {
+        val proxy = proxies[player.uniqueId] ?: return
+        val packets = buildList<PacketWrapper<*>> {
+            add(WrapperPlayServerDestroyEntities(proxy.entityId))
+            if (session != null) {
+                // 玩家伪装需要本人的客户端也认识这个虚拟档案
+                session.profile?.let { add(profileAdd(it)) }
+                addAll(spawnPackets(player, session, proxy.entityId, session.profile?.uuid ?: proxy.uuid, passengers = false))
+            }
+        }
+        send(player, packets)
+    }
+
+    /** 代理实体的装备更新（服务器不会给本人发自己的装备包）。 */
+    fun sendProxyEquipment(player: Player) {
+        val proxy = proxies[player.uniqueId] ?: return
+        send(player, listOf(WrapperPlayServerEntityEquipment(proxy.entityId, equipment(player))))
     }
 
     /** 让所有在线玩家（除 [except]）知道这个虚拟档案，玩家伪装的实体才能生成。 */
@@ -207,11 +267,16 @@ class DisguiseRenderer(
         }
     }
 
-    private fun spawnPackets(player: Player, session: DisguiseSession?): List<PacketWrapper<*>> {
+    private fun spawnPackets(
+        player: Player,
+        session: DisguiseSession?,
+        entityId: Int = player.entityId,
+        uuid: UUID = session?.profile?.uuid ?: player.uniqueId,
+        passengers: Boolean = true,
+    ): List<PacketWrapper<*>> {
         val loc = player.location
         val vel = player.velocity
         val type = session?.entityType ?: EntityTypes.PLAYER
-        val uuid = session?.profile?.uuid ?: player.uniqueId
         val metadata = if (session == null) {
             EntitySnapshot.realPlayer(player)
         } else {
@@ -221,13 +286,14 @@ class DisguiseRenderer(
         return buildList {
             add(
                 WrapperPlayServerSpawnEntity(
-                    player.entityId, Optional.of(uuid), type,
+                    entityId, Optional.of(uuid), type,
                     Vector3d(loc.x, loc.y, loc.z), loc.pitch, loc.yaw, loc.yaw, 0,
                     Optional.of(Vector3d(vel.x, vel.y, vel.z)),
                 ),
             )
-            add(WrapperPlayServerEntityMetadata(player.entityId, metadata))
-            add(WrapperPlayServerEntityEquipment(player.entityId, equipment(player)))
+            add(WrapperPlayServerEntityMetadata(entityId, metadata))
+            add(WrapperPlayServerEntityEquipment(entityId, equipment(player)))
+            if (!passengers) return@buildList
             // 实体被销毁后客户端会丢失乘坐关系，需要补发
             player.vehicle?.let { v -> add(WrapperPlayServerSetPassengers(v.entityId, v.passengers.map { it.entityId }.toIntArray())) }
             if (player.passengers.isNotEmpty()) {

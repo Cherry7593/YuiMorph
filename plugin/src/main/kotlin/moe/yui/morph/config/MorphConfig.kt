@@ -31,6 +31,8 @@ data class MorphConfig(
     val unmorphOnDeath: Boolean = false,
     /** 强制伪装的 ID 字符串；null 表示不启用。 */
     val forcedDisguise: String? = null,
+    /** 是否接受客户端 Mod 的增强功能。 */
+    val clientModEnabled: Boolean = true,
 ) {
     fun isBanned(id: DisguiseId): Boolean =
         id.toString() in bannedDisguises || "${id.namespace}:@all" in bannedDisguises
@@ -60,6 +62,7 @@ data class MorphConfig(
             restoreOnJoin = config.getBoolean("restore-on-join", true),
             unmorphOnDeath = config.getBoolean("unmorph-on-death", false),
             forcedDisguise = config.getString("forced-disguise")?.trim()?.takeIf { it.isNotEmpty() },
+            clientModEnabled = config.getBoolean("client-mod.enabled", true),
         )
     }
 }

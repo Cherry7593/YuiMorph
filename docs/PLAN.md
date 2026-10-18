@@ -61,4 +61,4 @@ python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版
 | M3 ✅ | 箱子 GUI、交换请求、管理命令、封禁列表、语言文件 | B2 B5 C2 |
 | M4 ✅ | 碰撞箱、血量缩放、环境音效、离线恢复、强制伪装 | A5 A6 A7 |
 | M5 ✅ | 伪装动作 | A4 |
-| M6 | 协议与 Fabric Mod：自身伪装渲染、选择界面、快捷键、HUD | G2 |
+| M6 🟡 | 协议与 Fabric Mod：自身伪装渲染、选择界面、快捷键、HUD（代码完成、构建通过，待客户端联调） | G2 |

@@ -52,5 +52,10 @@ unmorph-on-death: false
 # 例如：forced-disguise: minecraft:chicken
 forced-disguise: ""
 
+# 客户端 Mod（可选）：装了 YuiMorph Fabric Mod 的玩家可以看到自己的伪装、使用选择界面和快捷键
+# 没装 Mod 的玩家不受影响
+client-mod:
+  enabled: true
+
 # 请勿修改
-config-version: 2
+config-version: 3

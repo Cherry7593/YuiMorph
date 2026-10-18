@@ -41,7 +41,7 @@ data class S2CHello(val protocolVersion: Int, val accepted: Boolean, val serverV
     override fun write(w: PacketWriter) { w.varInt(protocolVersion).bool(accepted).string(serverVersion) }
 }
 
-/** 已解锁伪装列表同步。`full = true` 时 [added] 是完整列表，客户端应先清空。 */
+/** 可用伪装列表同步。`full = true` 时 [added] 是完整列表，客户端应先清空。 */
 data class S2CUnlockedSync(
     val full: Boolean,
     val added: List<String>,
@@ -52,22 +52,28 @@ data class S2CUnlockedSync(
 
 /**
  * 玩家自身的伪装状态（用于自身渲染和 HUD）。
- * [disguiseId] 为 null 表示未伪装；[actions] 是当前伪装可用的动作列表。
+ *
+ * - [disguiseId] 为 null 表示未伪装
+ * - [displayName] 玩家伪装时为玩家名；生物伪装为 null，客户端用实体类型名
+ * - [actions] 当前伪装可用的动作
+ * - [proxyEntityId] 服务器只发给本人的「代理实体」ID：外观、属性、动作都由服务器同步到这个实体上，
+ *   客户端每 tick 把它移到玩家位置并代替玩家模型渲染。没有代理时为 [NO_PROXY]
  */
 data class S2CSelfDisguise(
     val disguiseId: String?,
     val displayName: String?,
     val properties: Map<String, String>,
     val actions: List<String>,
+    val proxyEntityId: Int,
 ) : S2CPacket {
     override fun write(w: PacketWriter) {
-        w.nullableString(disguiseId).nullableString(displayName).stringMap(properties).stringList(actions)
+        w.nullableString(disguiseId).nullableString(displayName).stringMap(properties).stringList(actions).varInt(proxyEntityId)
     }
-}
 
-/** 通知客户端在自身伪装上播放动作。 */
-data class S2CPlayAction(val action: String) : S2CPacket {
-    override fun write(w: PacketWriter) { w.string(action) }
+    companion object {
+        const val NO_PROXY = 0
+        val NONE = S2CSelfDisguise(null, null, emptyMap(), emptyList(), NO_PROXY)
+    }
 }
 
 object PacketCodec {
@@ -79,7 +85,6 @@ object PacketCodec {
     private const val ID_S2C_HELLO = 0
     private const val ID_S2C_UNLOCKED_SYNC = 1
     private const val ID_S2C_SELF_DISGUISE = 2
-    private const val ID_S2C_PLAY_ACTION = 3
 
     fun encode(packet: Packet): ByteArray {
         val id = when (packet) {
@@ -90,7 +95,6 @@ object PacketCodec {
             is S2CHello -> ID_S2C_HELLO
             is S2CUnlockedSync -> ID_S2C_UNLOCKED_SYNC
             is S2CSelfDisguise -> ID_S2C_SELF_DISGUISE
-            is S2CPlayAction -> ID_S2C_PLAY_ACTION
         }
         val w = PacketWriter().byte(id)
         packet.write(w)
@@ -113,8 +117,7 @@ object PacketCodec {
         when (id) {
             ID_S2C_HELLO -> S2CHello(r.varInt(), r.bool(), r.string(64))
             ID_S2C_UNLOCKED_SYNC -> S2CUnlockedSync(r.bool(), r.stringList(), r.stringList())
-            ID_S2C_SELF_DISGUISE -> S2CSelfDisguise(r.nullableString(), r.nullableString(), r.stringMap(), r.stringList())
-            ID_S2C_PLAY_ACTION -> S2CPlayAction(r.string(64))
+            ID_S2C_SELF_DISGUISE -> S2CSelfDisguise(r.nullableString(), r.nullableString(), r.stringMap(), r.stringList(), r.varInt())
             else -> throw ProtocolException("未知的 S2C 包 ID $id")
         }
     }
