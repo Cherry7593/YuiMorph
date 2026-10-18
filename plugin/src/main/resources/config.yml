@@ -22,5 +22,35 @@ skin-cache-hours: 24
 # 交换请求的有效期（秒）
 request-timeout-seconds: 60
 
+# 碰撞箱：用原版 scale 属性缩放玩家，高度和伪装的生物一致（例如变成猪可以钻进 1 格高的缝）
+# 使用原版机制，反作弊一般能正确识别
+bounding-box:
+  enabled: true
+  # 变大前检查周围空间，空间不足时不允许变身
+  check-space: true
+  # 缩放范围（玩家高度 1.8 格为 1.0）。上限防止变成恶魂 / 末影龙后过大
+  min-scale: 0.25
+  max-scale: 2.0
+
+# 血量：最大生命值变为伪装生物的原版数值，当前血量按比例换算
+health-scale:
+  enabled: true
+  # 最大生命值上限（例如监守者原版有 500）
+  max-health: 60
+
+# 环境音效频率，1.0 约等于原版生物的叫声频率，0 关闭
+ambient-sound-frequency: 1.0
+
+# 下线时记住伪装，下次进服自动恢复
+restore-on-join: true
+
+# 死亡时解除伪装
+unmorph-on-death: false
+
+# 强制伪装：所有玩家进服时变成这个伪装，并且不能自己更换或解除
+# 拥有 yuimorph.forced.bypass 权限的玩家不受影响。留空关闭
+# 例如：forced-disguise: minecraft:chicken
+forced-disguise: ""
+
 # 请勿修改
-config-version: 1
+config-version: 2

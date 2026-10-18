@@ -54,7 +54,7 @@ class AdminCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
             }
         })
         .then(withTargets("unmorph") { sender, target ->
-            if (manager.unmorph(target)) msg.send(sender, "admin.force-unmorphed", ph("player", target.name))
+            if (manager.unmorph(target, force = true)) msg.send(sender, "admin.force-unmorphed", ph("player", target.name))
         })
         .then(withTargets("query") { sender, target -> query(sender, target) })
         .then(literal("queryall").executes { ctx -> queryAll(ctx.source.sender); Command.SINGLE_SUCCESS })
@@ -136,7 +136,7 @@ class AdminCommands(plugin: YuiMorphPlugin) : CommandModule(plugin) {
             val player = plugin.server.getPlayer(s.playerId) ?: return@forEach
             player.runOnRegion(plugin) {
                 if (manager.current(player)?.let { plugin.morphConfig.isBanned(it.disguise) } == true) {
-                    manager.unmorph(player, silent = true)
+                    manager.unmorph(player, silent = true, force = true)
                     msg.send(player, "morph.banned-removed", ph("disguise", s.disguise.displayName()))
                 }
             }

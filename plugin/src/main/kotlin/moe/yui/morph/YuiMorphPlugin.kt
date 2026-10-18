@@ -5,9 +5,12 @@ import moe.yui.morph.command.CommandModule
 import moe.yui.morph.command.PlayerCommands
 import moe.yui.morph.command.RequestCommands
 import moe.yui.morph.config.MorphConfig
+import moe.yui.morph.disguise.DisguiseId
 import moe.yui.morph.disguise.DisguiseManager
 import moe.yui.morph.disguise.property.DisguiseProperties
 import moe.yui.morph.disguise.property.EntityLayouts
+import moe.yui.morph.effect.DisguiseEffects
+import moe.yui.morph.effect.EntityTraits
 import moe.yui.morph.gui.DisguiseMenu
 import moe.yui.morph.i18n.Messages
 import moe.yui.morph.listener.PlayerListener
@@ -18,7 +21,10 @@ import moe.yui.morph.request.RequestManager
 import moe.yui.morph.skin.SkinService
 import moe.yui.morph.storage.PlayerDataStore
 import moe.yui.morph.util.runAsync
+import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
+import java.io.File
+import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 
@@ -42,6 +48,8 @@ class YuiMorphPlugin : JavaPlugin() {
         private set
     lateinit var requests: RequestManager
         private set
+    lateinit var effects: DisguiseEffects
+        private set
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -50,6 +58,8 @@ class YuiMorphPlugin : JavaPlugin() {
         val layouts = getResource("entity-layouts.tsv")?.use(EntityLayouts::load)
             ?: error("插件 jar 缺少 entity-layouts.tsv")
         properties = DisguiseProperties(layouts, PeMetadata)
+        val traits = getResource("entity-traits.tsv")?.use(EntityTraits::load) ?: error("插件 jar 缺少 entity-traits.tsv")
+        effects = DisguiseEffects(this, traits)
         skins = SkinService(this) { morphConfig.skinCacheHours * 3_600_000L }.also { it.load() }
 
         store = PlayerDataStore(dataFolder, logger)
@@ -85,8 +95,10 @@ class YuiMorphPlugin : JavaPlugin() {
     private fun restoreAll() {
         for (session in disguises.sessions.all().toList()) {
             val player = server.getPlayer(session.playerId) ?: continue
+            // 记住伪装，服务器重启 / 插件重载后恢复
+            store[player.uniqueId]?.current = session.disguise.toString()
             try {
-                disguises.unmorph(player, silent = true)
+                disguises.unmorph(player, silent = true, force = true)
             } catch (e: Exception) {
                 logger.log(Level.FINE, "停用时恢复 ${player.name} 失败", e)
             }
@@ -108,9 +120,33 @@ class YuiMorphPlugin : JavaPlugin() {
         return true
     }
 
+    /**
+     * 配置文件版本落后时，把用户已有的值写进 jar 内置模板再保存：
+     * 新增选项带着注释出现在正确的位置，用户的设置保持不变。
+     */
+    private fun migrateConfig() {
+        val template = getResource("config.yml")?.use {
+            YamlConfiguration.loadConfiguration(InputStreamReader(it, Charsets.UTF_8))
+        } ?: return
+        val latest = template.getInt("config-version")
+        val current = config.getInt("config-version", 0)
+        if (current >= latest) return
+
+        File(dataFolder, "config.yml").copyTo(File(dataFolder, "config.yml.v$current.bak"), overwrite = true)
+        for (key in config.getKeys(true)) {
+            if (key == "config-version" || config.isConfigurationSection(key) || !template.contains(key)) continue
+            template.set(key, config.get(key))
+        }
+        template.save(File(dataFolder, "config.yml"))
+        reloadConfig()
+        logger.info("配置文件已从版本 $current 升级到 $latest（旧文件备份为 config.yml.v$current.bak）")
+    }
+
     fun reload() {
         reloadConfig()
+        migrateConfig()
         morphConfig = MorphConfig.load(config)
+        morphConfig.forcedDisguise?.let { if (DisguiseId.parse(it) == null) logger.warning("forced-disguise 无效：$it") }
         messages = Messages.load(this, morphConfig.language)
     }
 }

@@ -44,6 +44,9 @@ permissions:
   yuimorph.request.deny:
     description: 拒绝伪装交换请求
     default: true
+  yuimorph.forced.bypass:
+    description: 不受强制伪装限制
+    default: op
   yuimorph.admin:
     description: 使用 /yuimorph 管理命令
     default: op

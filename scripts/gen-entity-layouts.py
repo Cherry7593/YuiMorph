@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""生成实体元数据布局表（每次升级 MC 版本后重新运行）。
+"""生成实体数据表（每次升级 MC 版本后重新运行）。
+
+输出两个文件：
+  - entity-layouts.tsv：元数据字段布局（见下）
+  - entity-traits.tsv：原版尺寸（宽、高）和默认最大生命值，用于碰撞箱和血量缩放
 
 从服务端 jar 的字节码计算每种实体的 SynchedEntityData 字段（索引、所属类.字段名、序列化器），
 输出到 plugin/src/main/resources/entity-layouts.tsv，插件运行时据此：
@@ -88,9 +92,75 @@ def type_classes(workdir):
     return result
 
 
+FLOAT_PUSH = re.compile(r"\s(?:ldc(?:_w)?\s+#\d+\s+// float ([\d.E-]+)f|fconst_(\d))")
+DOUBLE_PUSH = re.compile(r"\s(?:ldc2_w\s+#\d+\s+// double ([\d.E-]+)d|dconst_(\d))")
+
+
+def type_sizes(workdir):
+    """EntityTypeIds 字段名 -> (宽, 高)。取 Builder.sized(FF) 前面的两个 float；没有调用时是默认 0.6x1.8。"""
+    sizes, current, floats = {}, None, []
+    for line in static_block(javap(workdir, ENTITY_PKG + "EntityTypes")).splitlines():
+        g = re.search(r"getstatic\s+#\d+\s+// Field net/minecraft/world/entity/EntityTypeIds\.(\w+):", line)
+        if g:
+            current, floats = g.group(1), []
+            sizes.setdefault(current, (0.6, 1.8))
+            continue
+        f = FLOAT_PUSH.search(line)
+        if f:
+            floats.append(float(f.group(1) if f.group(1) is not None else f.group(2)))
+            continue
+        if current and "EntityType$Builder.sized:(FF)" in line and len(floats) >= 2:
+            sizes[current] = (floats[-2], floats[-1])
+        if "invoke" in line:
+            floats = []
+    return sizes
+
+
+def method_body(out, name):
+    m = re.search(r"static \S+ " + re.escape(name) + r"\(\);\n\s+Code:\n(.*?)(?:\n\n|\n  [a-z])", out, re.S)
+    return m.group(1) if m else ""
+
+
+def max_health(workdir, cls, method, depth=0):
+    """在 createAttributes 类方法里找 MAX_HEALTH；本方法没有就顺着父类 builder 往上找。"""
+    if depth > 8:
+        return None
+    body = method_body(javap(workdir, cls), method)
+    lines = body.splitlines()
+    for i, line in enumerate(lines):
+        if "Attributes.MAX_HEALTH" in line:
+            for nxt in lines[i + 1:i + 3]:
+                d = DOUBLE_PUSH.search(nxt)
+                if d:
+                    return float(d.group(1) if d.group(1) is not None else d.group(2))
+    for line in lines:
+        p = re.search(r"invokestatic\s+#\d+\s+// Method ([\w/$]+)\.(\w+):\(\)Lnet/minecraft/world/entity/ai/attributes/AttributeSupplier\$Builder;", line)
+        if p:
+            return max_health(workdir, p.group(1), p.group(2), depth + 1)
+    return None
+
+
+def type_health(workdir):
+    """EntityTypes 字段名 -> 默认最大生命值（来自 DefaultAttributes 的映射）。"""
+    result, pending = {}, None
+    out = javap(workdir, ENTITY_PKG + "ai/attributes/DefaultAttributes")
+    for line in static_block(out).splitlines():
+        g = re.search(r"getstatic\s+#\d+\s+// Field net/minecraft/world/entity/EntityTypes\.(\w+):", line)
+        if g:
+            pending = g.group(1)
+            continue
+        m = re.search(r"invokestatic\s+#\d+\s+// Method ([\w/$]+)\.(\w+):\(\)Lnet/minecraft/world/entity/ai/attributes/AttributeSupplier\$Builder;", line)
+        if m and pending:
+            # LivingEntity 的默认最大生命值是 20
+            result[pending] = max_health(workdir, m.group(1), m.group(2)) or 20.0
+            pending = None
+    return result
+
+
 def main():
     jar = sys.argv[1]
     out_path = sys.argv[2] if len(sys.argv) > 2 else "plugin/src/main/resources/entity-layouts.tsv"
+    traits_path = os.path.join(os.path.dirname(out_path), "entity-traits.tsv")
     with tempfile.TemporaryDirectory() as tmp:
         with zipfile.ZipFile(jar) as z:
             for n in z.namelist():
@@ -132,12 +202,24 @@ def main():
                 continue
             rows.append("minecraft:" + key + "\t" + "\t".join(f"{n}:{s}" for n, s in layout))
 
+        sizes, health = type_sizes(tmp), type_health(tmp)
+        traits = []
+        for field, key in sorted(ids.items(), key=lambda kv: kv[1]):
+            if field in health:
+                w, h = sizes.get(field, (0.6, 1.8))
+                traits.append(f"minecraft:{key}\t{w:g}\t{h:g}\t{health[field]:g}")
+
     version = os.path.basename(jar)
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(f"# 由 scripts/gen-entity-layouts.py 从 {version} 生成，请勿手改\n")
         f.write("# 实体ID<TAB>字段0<TAB>字段1...（字段格式：类.字段名:序列化器，第 N 列即索引 N）\n")
         f.write("\n".join(rows) + "\n")
+    with open(traits_path, "w", encoding="utf-8") as f:
+        f.write(f"# 由 scripts/gen-entity-layouts.py 从 {version} 生成，请勿手改\n")
+        f.write("# 实体ID<TAB>宽<TAB>高<TAB>默认最大生命值\n")
+        f.write("\n".join(traits) + "\n")
     print(f"写入 {out_path}：{len(rows)} 种实体（映射 {len(classes)} / ID {len(ids)}）")
+    print(f"写入 {traits_path}：{len(traits)} 种生物")
 
 
 if __name__ == "__main__":

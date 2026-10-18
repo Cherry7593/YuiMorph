@@ -34,9 +34,9 @@ YuiMorph/
 - 变身或取消时 → 对当前观察者先发 `DESTROY_ENTITIES`，再按新状态重新生成
 - 只用 PacketEvents 和 Folia 调度 API，所有状态都放在线程安全的容器里，不在 Netty 线程里读写世界
 
-## 实体元数据布局表
+## 实体数据表
 
-`plugin/src/main/resources/entity-layouts.tsv` 由 `scripts/gen-entity-layouts.py` 从服务端 jar 的字节码生成，记录每种实体的全部同步字段。属性按字段名（例如 `Sheep.DATA_WOOL_ID`）查找索引，不写死数字。
+`entity-layouts.tsv`（元数据字段）和 `entity-traits.tsv`（尺寸、默认最大生命值）都在 `plugin/src/main/resources/`，由 `scripts/gen-entity-layouts.py` 从服务端 jar 的字节码生成。属性按字段名（例如 `Sheep.DATA_WOOL_ID`）查找索引，不写死数字。
 
 **升级 MC 版本时必须重新生成**：
 
@@ -48,7 +48,7 @@ python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版
 ## 已知限制（M1）
 
 - 伪装者自己看不到自己的伪装（要等 M6 的客户端 Mod）
-- 受伤、脚步等声音仍然是玩家的声音（M4）
+- 受伤、脚步等声音仍然是玩家的声音（M4 只加了环境音效）
 - 插件停用时只能尽力恢复玩家本体（Folia 停用阶段不能调度区域任务），失败时重新进入视野就会恢复
 
 ## 里程碑
@@ -58,7 +58,7 @@ python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版
 | M0 ✅ | 多模块骨架，三个模块都能编译；插件能在测试服上加载 | — |
 | M1 ✅ | 伪装成生物（发包渲染）、`/morph` `/unmorph`、权限、JSON 存储、击杀解锁 | A1 B1 C3/C4 |
 | M2 ✅ | 伪装成玩家（皮肤）、伪装属性（变种 / 颜色 / 大小 / 名字） | A1 A3 |
-| M3 🟡 | 箱子 GUI、交换请求、管理命令、封禁列表、语言文件（代码完成、命令链路验证通过，待 GUI 目视验收） | B2 B5 C2 |
-| M4 | 碰撞箱、血量缩放、环境音效、离线恢复、强制伪装 | A5 A6 A7 |
+| M3 ✅ | 箱子 GUI、交换请求、管理命令、封禁列表、语言文件 | B2 B5 C2 |
+| M4 🟡 | 碰撞箱、血量缩放、环境音效、离线恢复、强制伪装（代码完成、属性与强制伪装已验证，待游戏内验收） | A5 A6 A7 |
 | M5 | 伪装动作 | A4 |
 | M6 | 协议与 Fabric Mod：自身伪装渲染、选择界面、快捷键、HUD | G2 |

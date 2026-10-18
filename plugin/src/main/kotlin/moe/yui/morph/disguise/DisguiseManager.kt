@@ -32,6 +32,10 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
 
     fun current(player: Player): DisguiseSession? = sessions[player.uniqueId]
 
+    /** 配置了强制伪装，并且玩家没有绕过权限。 */
+    fun isForced(player: Player): Boolean =
+        plugin.morphConfig.forcedDisguise != null && !player.hasPermission(Permissions.FORCED_BYPASS)
+
     fun isUnlocked(player: Player, id: DisguiseId): Boolean {
         val unlocked = plugin.store[player.uniqueId]?.unlocked ?: return false
         val text = id.toString()
@@ -55,6 +59,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
 
         if (!force) {
             val reason = when {
+                isForced(player) -> "morph.forced"
                 plugin.morphConfig.isWorldDisabled(player.world.name) -> "morph.world-disabled"
                 plugin.morphConfig.isBanned(id) -> "morph.banned"
                 !Permissions.canMorphAs(player, id) -> "morph.no-permission"
@@ -73,6 +78,10 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
         }
 
         val saved = savedProperties(player, id)
+        if (!plugin.effects.hasSpaceFor(player, id, props.retain(typeKey(id), saved))) {
+            msg.send(player, "morph.no-space", name)
+            return false
+        }
         when (id) {
             is DisguiseId.Mob -> {
                 pending.remove(player.uniqueId)
@@ -134,10 +143,15 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
         val old = current(player)
         sessions.put(session)
         plugin.renderer.apply(player, old, session)
+        plugin.effects.apply(player, session)
     }
 
-    /** 解除伪装。没有伪装时返回 false。 */
-    fun unmorph(player: Player, silent: Boolean = false): Boolean {
+    /** 解除伪装。没有伪装时返回 false。[force] 为 true 时无视强制伪装（管理员、死亡等）。 */
+    fun unmorph(player: Player, silent: Boolean = false, force: Boolean = false): Boolean {
+        if (!force && isForced(player)) {
+            if (!silent) msg.send(player, "morph.forced")
+            return false
+        }
         val hadPending = pending.remove(player.uniqueId) != null
         val old = sessions.remove(player.uniqueId)
         if (old == null) {
@@ -145,6 +159,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
             return hadPending
         }
         plugin.renderer.apply(player, old, null)
+        plugin.effects.clear(player)
         if (!silent) msg.send(player, "morph.unmorph")
         return true
     }
@@ -222,7 +237,7 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
         val text = id.toString()
         if (!data.unlocked.removeIf { it.equals(text, ignoreCase = id is DisguiseId.Player) }) return false
         plugin.store.save(player.uniqueId)
-        if (current(player)?.disguise == id) unmorph(player)
+        if (current(player)?.disguise == id) unmorph(player, force = true)
         return true
     }
 
@@ -231,6 +246,8 @@ class DisguiseManager(private val plugin: YuiMorphPlugin) {
     /** 玩家下线：丢弃会话；玩家伪装的虚拟档案需要从其他客户端移除。 */
     fun onQuit(player: Player) {
         pending.remove(player.uniqueId)
+        // 在玩家存档之前恢复血量上限，避免下次进服时血量被截断
+        plugin.effects.clear(player)
         sessions.remove(player.uniqueId)?.profile?.let(plugin.renderer::broadcastProfileRemoval)
     }
 
