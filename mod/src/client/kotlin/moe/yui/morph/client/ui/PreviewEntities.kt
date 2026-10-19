@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.EntitySpawnReason
+import net.minecraft.world.entity.EntitySpawnRequest
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.component.ResolvableProfile
@@ -59,13 +60,16 @@ object PreviewEntities {
         val level = Minecraft.getInstance().level ?: return null
         val entity = try {
             if (id.startsWith(PLAYER_PREFIX)) {
-                val mannequin = EntityTypes.MANNEQUIN.create(level, EntitySpawnReason.LOAD) ?: return null
+                val mannequin = EntityTypes.MANNEQUIN.create(level, SPAWN_REQUEST) ?: return null
                 val name = skinName?.takeIf { it.isNotBlank() } ?: id.removePrefix(PLAYER_PREFIX)
                 mannequin.entityData.set(MannequinAccessor.yuimorph_getDataProfile(), profile(name, texture ?: SkinCache[name]))
                 mannequin
             } else {
                 val type = Identifier.tryParse(id)?.let { BuiltInRegistries.ENTITY_TYPE.getOptional(it).orElse(null) } ?: return null
-                type.create(level, EntitySpawnReason.LOAD) as? LivingEntity
+                // create 会做生成检查（例如和平难度下敌对生物返回 null）；预览实体不进世界，跳过检查
+                (type.create(level, SPAWN_REQUEST) as? LivingEntity).also {
+                    if (it == null) logger.warn("无法创建预览实体 {}：create 返回 null", id)
+                }
             }
         } catch (e: Throwable) {
             logger.warn("无法创建预览实体 {}：{}", id, e.toString())
@@ -140,4 +144,7 @@ object PreviewEntities {
     }
 
     const val PLAYER_PREFIX = "player:"
+
+    /** 忽略生成检查（难度、特性开关）：预览实体只在界面里显示。 */
+    private val SPAWN_REQUEST = EntitySpawnRequest(EntitySpawnReason.LOAD, true)
 }
