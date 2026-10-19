@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "yuimorph-gametest",
+  "version": "0.0.0",
+  "name": "YuiMorph GameTest",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      {
+        "adapter": "kotlin",
+        "value": "moe.yui.morph.gametest.PreviewRenderGameTest"
+      }
+    ]
+  },
+  "depends": {
+    "yuimorph": "*",
+    "fabric-client-gametest-api-v1": "*"
+  }
+}

@@ -1,7 +1,6 @@
 package moe.yui.morph.client
 
 import net.minecraft.client.Minecraft
-import net.minecraft.world.phys.Vec3
 
 /**
  * 每个客户端 tick 结束时（玩家已经移动完）手动 tick 代理实体。
@@ -28,8 +27,8 @@ object ProxyTicker {
         proxy.commonTick()
         proxy.setPos(player.x, player.y, player.z)
         proxy.setOnGround(player.onGround())
-        // 不复制玩家速度：代理实体不应该有任何自己的物理运动
-        proxy.deltaMovement = Vec3.ZERO
+        // 复制速度只影响外观（披风摆动、鞘翅等），代理实体的物理已经由 Mixin 完全隔离
+        proxy.deltaMovement = player.deltaMovement
         proxy.yRot = player.yRot
         proxy.xRot = player.xRot
         proxy.yHeadRot = player.yHeadRot

@@ -15,6 +15,19 @@ loom {
     }
 }
 
+// 客户端自动化测试：./gradlew :mod:runClientGameTest（会打开一个游戏窗口，测试完自动关闭）
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "yuimorph-gametest"
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = true
+        // 保留运行目录，便于预置 options.txt（例如在 macOS 上切换到 Vulkan）
+        clearRunDirectory = false
+    }
+}
+
 dependencies {
     minecraft(libs.minecraft)
     implementation(libs.fabric.loader)
@@ -30,4 +43,10 @@ tasks.processResources {
     val props = mapOf("version" to project.version)
     inputs.properties(props)
     filesMatching("fabric.mod.json") { expand(props) }
+}
+
+// 测试源码需要访问客户端代码
+sourceSets.named("gametest") {
+    compileClasspath += sourceSets["client"].output
+    runtimeClasspath += sourceSets["client"].output
 }

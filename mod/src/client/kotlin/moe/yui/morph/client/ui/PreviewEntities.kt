@@ -4,6 +4,7 @@ import moe.yui.morph.client.mixin.ClientMannequinAccessor
 import moe.yui.morph.client.mixin.MannequinAccessor
 import net.minecraft.client.entity.ClientMannequin
 import java.util.Optional
+import net.minecraft.world.phys.Vec3
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.inventory.InventoryScreen
@@ -89,17 +90,17 @@ object PreviewEntities {
     }
 
     /**
-     * 每 tick 调用：让预览实体像普通实体一样有「年龄」和位置（跟随玩家）。
-     * 一些模型 Mod / 资源包（例如 EMF + Fresh Animations）按实体年龄、位置计算动画，从没 tick 过的实体可能画不出来。
+     * 界面打开时每 tick 调用：推进实体年龄（部分动画按年龄计算），
+     * 假人还要应用异步加载的皮肤、推进披风物理（否则披风会按初始状态被甩到一边）。
      */
     fun tick(extra: LivingEntity?) {
-        val player = Minecraft.getInstance().player ?: return
         val all = if (extra != null) thumbnails.values + extra else thumbnails.values
         for (e in all) {
-            e.setOldPosAndRot()
-            e.setPos(player.x, player.y, player.z)
             e.tickCount++
-            if (e is ClientMannequin) applySkin(e)
+            if (e is ClientMannequin) {
+                applySkin(e)
+                e.avatarState().tick(e.position(), Vec3.ZERO)
+            }
         }
     }
 
