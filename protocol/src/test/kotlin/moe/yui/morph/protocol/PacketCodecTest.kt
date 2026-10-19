@@ -13,6 +13,7 @@ class PacketCodecTest {
             C2SMorph("minecraft:sheep", mapOf("color" to "pink")),
             C2SPreview(7, "minecraft:cat", null),
             C2SPreview(8, "player:Notch", mapOf("skin" to "jeb_")),
+            C2SRequestSkins(listOf("Notch", "jeb_")),
             C2SUnmorph,
             C2SPlayAction("sit"),
         ).forEach { assertEquals(it, PacketCodec.decodeC2S(PacketCodec.encode(it))) }
@@ -31,6 +32,9 @@ class PacketCodecTest {
                 listOf(PropertySpec("color", listOf("white", "pink"), 32), PropertySpec("name", null, 32)),
                 listOf("eat"),
             ),
+            S2CPreview(9, "player:Notch", -2, emptyMap(), emptyList(), listOf("lay"), SkinTexture("ZXlKMFpYaDA=", "c2ln")),
+            S2CSkin("Notch", SkinTexture("ZXlKMFpYaDA=", null)),
+            S2CSkin("Nobody", null),
         ).forEach { assertEquals(it, PacketCodec.decodeS2C(PacketCodec.encode(it))) }
     }
 

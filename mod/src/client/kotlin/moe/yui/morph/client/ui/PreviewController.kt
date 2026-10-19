@@ -75,7 +75,9 @@ object PreviewController {
         specs = packet.specs
         actions = packet.actions
         previewEntityId = packet.previewEntityId
-        entity = PreviewEntities.create(packet.disguiseId, packet.properties["skin"])
+        val skinName = packet.properties["skin"] ?: packet.disguiseId.removePrefix(PreviewEntities.PLAYER_PREFIX)
+        packet.skin?.let { SkinCache.put(skinName, it) }
+        entity = PreviewEntities.create(packet.disguiseId, packet.properties["skin"], packet.skin)
         revision++
     }
 

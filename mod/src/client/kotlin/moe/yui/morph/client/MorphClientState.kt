@@ -7,6 +7,8 @@ import moe.yui.morph.protocol.S2CHello
 import moe.yui.morph.protocol.S2CPacket
 import moe.yui.morph.protocol.S2CPreview
 import moe.yui.morph.protocol.S2CSelfDisguise
+import moe.yui.morph.protocol.S2CSkin
+import moe.yui.morph.client.ui.SkinCache
 import moe.yui.morph.client.storage.ClientStorage
 import moe.yui.morph.client.ui.PreviewController
 import moe.yui.morph.protocol.S2CUnlockedSync
@@ -56,6 +58,7 @@ object MorphClientState {
                 if (changed) ClientStorage.pushRecent(packet.disguiseId!!)
             }
             is S2CPreview -> PreviewController.onPreview(packet)
+            is S2CSkin -> SkinCache.onSkin(packet)
         }
     }
 

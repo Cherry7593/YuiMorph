@@ -13,6 +13,7 @@ import moe.yui.morph.protocol.C2SHello
 import moe.yui.morph.protocol.C2SMorph
 import moe.yui.morph.protocol.C2SPlayAction
 import moe.yui.morph.protocol.C2SPreview
+import moe.yui.morph.protocol.C2SRequestSkins
 import moe.yui.morph.protocol.C2SUnmorph
 import moe.yui.morph.protocol.PacketCodec
 import moe.yui.morph.protocol.Protocol
@@ -21,6 +22,9 @@ import moe.yui.morph.protocol.S2CHello
 import moe.yui.morph.protocol.PropertySpec
 import moe.yui.morph.protocol.S2CPacket
 import moe.yui.morph.protocol.S2CPreview
+import moe.yui.morph.protocol.S2CSkin
+import moe.yui.morph.protocol.SkinTexture
+import moe.yui.morph.disguise.property.PropertyDefs
 import moe.yui.morph.protocol.S2CSelfDisguise
 import moe.yui.morph.protocol.S2CUnlockedSync
 import moe.yui.morph.util.runOnRegion
@@ -75,6 +79,7 @@ class ClientBridge(private val plugin: YuiMorphPlugin) : PluginMessageListener {
                     is C2SMorph -> DisguiseId.parse(packet.disguiseId)?.let { plugin.disguises.morph(player, it, properties = packet.properties) }
                         ?: plugin.messages.send(player, "morph.invalid-id", ph("id", packet.disguiseId))
                     is C2SPreview -> preview(player, packet)
+                    is C2SRequestSkins -> sendSkins(player, packet.names)
                     C2SUnmorph -> plugin.disguises.unmorph(player)
                     is C2SPlayAction -> plugin.actions.play(player, packet.action)
                     is C2SHello -> Unit
@@ -126,10 +131,29 @@ class ClientBridge(private val plugin: YuiMorphPlugin) : PluginMessageListener {
             PropertySpec(key.name, plugin.properties.values(key), key.maxLength)
         }
         val typeKey = DisguiseManager.typeKey(id)
-        send(player, S2CPreview(request.requestId, id.toString(), PREVIEW_ENTITY_ID, properties, specs, ActionDefs.names(typeKey)))
-        // 元数据紧跟在预览信息之后发出，客户端按顺序处理
-        val metadata = plugin.properties.metadata(typeKey, properties).mapNotNull(PeMetadata::toEntityData)
-        plugin.renderer.sendPreviewMetadata(player, PREVIEW_ENTITY_ID, metadata)
+        val reply = { skin: SkinTexture? ->
+            send(player, S2CPreview(request.requestId, id.toString(), PREVIEW_ENTITY_ID, properties, specs, ActionDefs.names(typeKey), skin))
+            // 元数据紧跟在预览信息之后发出，客户端按顺序处理
+            val metadata = plugin.properties.metadata(typeKey, properties).mapNotNull(PeMetadata::toEntityData)
+            plugin.renderer.sendPreviewMetadata(player, PREVIEW_ENTITY_ID, metadata)
+        }
+        if (id !is DisguiseId.Player) return reply(null)
+
+        // 玩家伪装：带上服务器拿到的签名皮肤（客户端不一定能访问 Mojang）
+        val skinName = properties[PropertyDefs.SKIN] ?: id.name
+        plugin.skins.resolve(skinName).whenComplete { result, _ ->
+            player.runOnRegion(plugin) { reply(result?.skin?.let { SkinTexture(it.value, it.signature) }) }
+        }
+    }
+
+    /** 界面缩略图要用的玩家皮肤：逐个获取，拿到一个回复一个。 */
+    private fun sendSkins(player: Player, names: List<String>) {
+        names.asSequence().filter(PLAYER_NAME::matches).distinct().take(C2SRequestSkins.MAX_NAMES).forEach { name ->
+            plugin.skins.resolve(name).whenComplete { result, _ ->
+                val skin = result?.skin?.let { SkinTexture(it.value, it.signature) }
+                player.runOnRegion(plugin) { send(player, S2CSkin(name, skin)) }
+            }
+        }
     }
 
     // ---------------- 状态推送 ----------------
@@ -175,6 +199,7 @@ class ClientBridge(private val plugin: YuiMorphPlugin) : PluginMessageListener {
     private companion object {
         /** 预览实体只存在于客户端的界面里，用一个不会和真实实体冲突的负数 ID。 */
         const val PREVIEW_ENTITY_ID = -2
+        val PLAYER_NAME = Regex("^[A-Za-z0-9_]{1,16}$")
 
         val EQUIPMENT_SLOTS = listOf(
             EquipmentSlot.HAND, EquipmentSlot.OFF_HAND, EquipmentSlot.FEET,

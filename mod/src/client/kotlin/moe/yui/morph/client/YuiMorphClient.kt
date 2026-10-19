@@ -6,6 +6,7 @@ import moe.yui.morph.client.ui.ActionWheelScreen
 import moe.yui.morph.client.ui.MorphScreen
 import moe.yui.morph.client.ui.PreviewController
 import moe.yui.morph.client.ui.PreviewEntities
+import moe.yui.morph.client.ui.SkinCache
 import moe.yui.morph.client.net.MorphPayload
 import moe.yui.morph.protocol.C2SHello
 import moe.yui.morph.protocol.C2SUnmorph
@@ -65,6 +66,7 @@ object YuiMorphClient : ClientModInitializer {
             MorphClientState.reset()
             PreviewController.clear()
             PreviewEntities.clear()
+            SkinCache.clear()
         }
     }
 

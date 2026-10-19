@@ -211,6 +211,8 @@ class MorphScreen : Screen(Component.translatable("yuimorph.screen.select.title"
             }
         }
         scrollRow = scrollRow.coerceIn(0, maxScroll)
+        // 玩家缩略图的皮肤向服务器要
+        SkinCache.request(tiles.filter { it.id.startsWith(PreviewEntities.PLAYER_PREFIX) }.map { it.id.removePrefix(PreviewEntities.PLAYER_PREFIX) })
     }
 
     private fun switchTab(t: Tab) {
@@ -265,6 +267,7 @@ class MorphScreen : Screen(Component.translatable("yuimorph.screen.select.title"
     }
 
     override fun tick() {
+        PreviewEntities.tick(PreviewController.entity)
         // 服务器同步了可用列表 / 自身伪装：刷新网格
         val data = MorphClientState.available to MorphClientState.self.disguiseId
         if (data != seenData) {

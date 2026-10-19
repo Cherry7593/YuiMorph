@@ -16,6 +16,22 @@ sealed interface C2SPacket : Packet
 /** 服务端 → 客户端 */
 sealed interface S2CPacket : Packet
 
+/** Mojang 签名过的皮肤纹理（`textures` 属性）。客户端不需要再去访问 Mojang。 */
+data class SkinTexture(val value: String, val signature: String?) {
+    fun write(w: PacketWriter) { w.string(value).nullableString(signature) }
+
+    companion object {
+        fun read(r: PacketReader) = SkinTexture(r.string(), r.nullableString())
+    }
+}
+
+private fun PacketWriter.skin(skin: SkinTexture?) = apply {
+    bool(skin != null)
+    skin?.write(this)
+}
+
+private fun PacketReader.skin(): SkinTexture? = if (bool()) SkinTexture.read(this) else null
+
 /** 一个可设置的属性。[values] 为 null 表示自由文本（最长 [maxLength]）。 */
 data class PropertySpec(val key: String, val values: List<String>?, val maxLength: Int) {
     fun write(w: PacketWriter) {
@@ -50,6 +66,15 @@ data class C2SMorph(val disguiseId: String, val properties: Map<String, String>?
  */
 data class C2SPreview(val requestId: Int, val disguiseId: String, val properties: Map<String, String>?) : C2SPacket {
     override fun write(w: PacketWriter) { w.varInt(requestId).string(disguiseId).nullableStringMap(properties) }
+}
+
+/** 请求一批玩家的皮肤（用于界面缩略图），服务器逐个回复 [S2CSkin]。 */
+data class C2SRequestSkins(val names: List<String>) : C2SPacket {
+    override fun write(w: PacketWriter) { w.stringList(names) }
+
+    companion object {
+        const val MAX_NAMES = 64
+    }
 }
 
 data object C2SUnmorph : C2SPacket {
@@ -112,13 +137,20 @@ data class S2CPreview(
     val properties: Map<String, String>,
     val specs: List<PropertySpec>,
     val actions: List<String>,
+    /** 玩家伪装的皮肤；生物伪装或获取失败时为 null。 */
+    val skin: SkinTexture? = null,
 ) : S2CPacket {
     override fun write(w: PacketWriter) {
         w.varInt(requestId).string(disguiseId).varInt(previewEntityId).stringMap(properties)
         w.varInt(specs.size)
         specs.forEach { it.write(w) }
-        w.stringList(actions)
+        w.stringList(actions).skin(skin)
     }
+}
+
+/** 一个玩家的皮肤；[skin] 为 null 表示获取失败（客户端用默认皮肤）。 */
+data class S2CSkin(val name: String, val skin: SkinTexture?) : S2CPacket {
+    override fun write(w: PacketWriter) { w.string(name).skin(skin) }
 }
 
 object PacketCodec {
@@ -127,11 +159,13 @@ object PacketCodec {
     private const val ID_C2S_UNMORPH = 2
     private const val ID_C2S_PLAY_ACTION = 3
     private const val ID_C2S_PREVIEW = 4
+    private const val ID_C2S_REQUEST_SKINS = 5
 
     private const val ID_S2C_HELLO = 0
     private const val ID_S2C_UNLOCKED_SYNC = 1
     private const val ID_S2C_SELF_DISGUISE = 2
     private const val ID_S2C_PREVIEW = 3
+    private const val ID_S2C_SKIN = 4
 
     fun encode(packet: Packet): ByteArray {
         val id = when (packet) {
@@ -140,10 +174,12 @@ object PacketCodec {
             C2SUnmorph -> ID_C2S_UNMORPH
             is C2SPlayAction -> ID_C2S_PLAY_ACTION
             is C2SPreview -> ID_C2S_PREVIEW
+            is C2SRequestSkins -> ID_C2S_REQUEST_SKINS
             is S2CHello -> ID_S2C_HELLO
             is S2CUnlockedSync -> ID_S2C_UNLOCKED_SYNC
             is S2CSelfDisguise -> ID_S2C_SELF_DISGUISE
             is S2CPreview -> ID_S2C_PREVIEW
+            is S2CSkin -> ID_S2C_SKIN
         }
         val w = PacketWriter().byte(id)
         packet.write(w)
@@ -159,6 +195,7 @@ object PacketCodec {
             ID_C2S_UNMORPH -> C2SUnmorph
             ID_C2S_PLAY_ACTION -> C2SPlayAction(r.string(64))
             ID_C2S_PREVIEW -> C2SPreview(r.varInt(), r.string(256), r.nullableStringMap())
+            ID_C2S_REQUEST_SKINS -> C2SRequestSkins(r.stringList(C2SRequestSkins.MAX_NAMES))
             else -> throw ProtocolException("未知的 C2S 包 ID $id")
         }
     }
@@ -172,7 +209,9 @@ object PacketCodec {
                 r.varInt(), r.string(256), r.varInt(), r.stringMap(),
                 List(r.varInt().also { if (it > 64) throw ProtocolException("属性过多：$it") }) { PropertySpec.read(r) },
                 r.stringList(),
+                r.skin(),
             )
+            ID_S2C_SKIN -> S2CSkin(r.string(64), r.skin())
             else -> throw ProtocolException("未知的 S2C 包 ID $id")
         }
     }
