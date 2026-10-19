@@ -1,6 +1,9 @@
 package moe.yui.morph.client.ui
 
+import moe.yui.morph.client.mixin.ClientMannequinAccessor
 import moe.yui.morph.client.mixin.MannequinAccessor
+import net.minecraft.client.entity.ClientMannequin
+import java.util.Optional
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.inventory.InventoryScreen
@@ -96,6 +99,20 @@ object PreviewEntities {
             e.setOldPosAndRot()
             e.setPos(player.x, player.y, player.z)
             e.tickCount++
+            if (e is ClientMannequin) applySkin(e)
+        }
+    }
+
+    /** 等同于 ClientMannequin#tick 里应用皮肤的那一段：查询完成后把皮肤设上去。 */
+    private fun applySkin(mannequin: ClientMannequin) {
+        val accessor = mannequin as ClientMannequinAccessor
+        val lookup = accessor.yuimorph_getSkinLookup() ?: return
+        if (!lookup.isDone) return
+        accessor.yuimorph_setSkinLookup(null)
+        try {
+            lookup.getNow(Optional.empty()).ifPresent(accessor::yuimorph_setSkin)
+        } catch (e: Exception) {
+            logger.warn("预览皮肤加载失败：{}", e.toString())
         }
     }
 

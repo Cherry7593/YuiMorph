@@ -346,8 +346,10 @@ class MorphScreen : Screen(Component.translatable("yuimorph.screen.select.title"
             if (selected) frame(g, x, y, x + TILE_W, y + TILE_H, PINK)
 
             PreviewEntities.thumbnail(tile.id)?.let { e ->
-                // 缩略图正对玩家：视线点放在格子中心
-                PreviewEntities.draw(g, tile.id, e, x + 2, y + 2, x + TILE_W - 2, y + TILE_H - 12, x + TILE_W / 2f, y + TILE_H / 2f - 8)
+                // 缩略图用固定的四分之三侧面角度，比正对着看更有立体感；鼠标悬停时跟随鼠标转动
+                val lookX = if (hovered) mouseX.toFloat() else x + TILE_W / 2f - THUMB_TURN
+                val lookY = if (hovered) mouseY.toFloat() else y + TILE_H / 2f - 20
+                PreviewEntities.draw(g, tile.id, e, x + 2, y + 2, x + TILE_W - 2, y + TILE_H - 12, lookX, lookY)
             }
             val name = font.plainSubstrByWidth(tile.label.string, TILE_W - 4)
             g.centeredText(font, name, x + TILE_W / 2, y + TILE_H - 10, if (selected) PINK else WHITE)
@@ -415,6 +417,9 @@ class MorphScreen : Screen(Component.translatable("yuimorph.screen.select.title"
         const val TAB_W = 44
         const val LABEL_W = 46
         const val TEXT_DEBOUNCE_TICKS = 8
+
+        /** 视线点偏离格子中心的距离：原版按 atan(距离 / 40) 计算转身，80 约等于身体转 22°、头转 44°。 */
+        const val THUMB_TURN = 80f
 
         const val WHITE = 0xFFFFFFFF.toInt()
         const val GRAY = 0xFFAAAAAA.toInt()
