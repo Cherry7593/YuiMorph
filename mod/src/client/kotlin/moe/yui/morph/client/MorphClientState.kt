@@ -76,7 +76,10 @@ object MorphClientState {
     @JvmStatic
     fun isProxy(entity: Entity): Boolean {
         val id = self.proxyEntityId
-        return id != S2CSelfDisguise.NO_PROXY && entity.id == id && entity.level() is ClientLevel
+        if (id == S2CSelfDisguise.NO_PROXY) return false
+        // 没加入世界的实体（例如其他 Mod 的界面预览）还没有 ID，读取会抛异常
+        val entityId = try { entity.id } catch (_: IllegalStateException) { return false }
+        return entityId == id && entity.level() is ClientLevel
     }
 
     /** 由 Mixin 调用：包装实体查询条件，排除代理实体。没有代理时原样返回，不增加开销。 */

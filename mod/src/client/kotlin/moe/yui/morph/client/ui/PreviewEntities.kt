@@ -23,6 +23,12 @@ object PreviewEntities {
     private val logger = LoggerFactory.getLogger("YuiMorph")
     private val thumbnails = HashMap<String, LivingEntity>()
 
+    /**
+     * 26.x 的实体在加入世界前没有 ID，读取 ID 会抛异常（渲染时会读）。
+     * 预览实体永远不加入世界，所以手动分配一段不会和真实实体、代理实体冲突的负数 ID。
+     */
+    private var nextId = -1_000_000
+
     /** 创建或渲染失败过的伪装，不再尝试（避免每帧刷错误）。 */
     private val broken = HashSet<String>()
 
@@ -38,7 +44,7 @@ object PreviewEntities {
     /** 新建一个预览实体。玩家伪装可以用 [skin] 指定另一个玩家的皮肤。 */
     fun create(id: String, skin: String?): LivingEntity? {
         val level = Minecraft.getInstance().level ?: return null
-        return try {
+        val entity = try {
             if (id.startsWith(PLAYER_PREFIX)) {
                 val mannequin = EntityTypes.MANNEQUIN.create(level, EntitySpawnReason.LOAD) ?: return null
                 val name = skin?.takeIf { it.isNotBlank() } ?: id.removePrefix(PLAYER_PREFIX)
@@ -52,6 +58,8 @@ object PreviewEntities {
             logger.warn("无法创建预览实体 {}：{}", id, e.toString())
             null
         }
+        entity?.setId(nextId--)
+        return entity
     }
 
     /**
