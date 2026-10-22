@@ -10,9 +10,30 @@ data class BoundingBoxConfig(
     val maxScale: Double = 2.0,
 )
 
-data class HealthScaleConfig(
+/** 伪装后最大生命值的处理方式。 */
+enum class HealthMode(val key: String) {
+    /** 不改变玩家生命值。 */
+    NONE("none"),
+
+    /** 跟随伪装生物，但不超过玩家本来的最大生命值。 */
+    CAPPED("capped"),
+
+    /** 完全跟随伪装生物。 */
+    UNLIMITED("unlimited"),
+    ;
+
+    companion object {
+        /** 无法识别的值按 [NONE] 处理。 */
+        fun parse(value: String?): HealthMode =
+            entries.firstOrNull { it.key.equals(value?.trim(), ignoreCase = true) } ?: NONE
+    }
+}
+
+data class MobAggroConfig(
     val enabled: Boolean = true,
-    val maxHealth: Double = 60.0,
+    /** 玩家主动攻击某只怪物后，它在多少秒内仍会主动追击。 */
+    val provokeSeconds: Int = 30,
+    val bruteIgnoresDisguise: Boolean = true,
 )
 
 /** 不可变配置快照，重载时整体替换，可以在任意线程安全读取。 */
@@ -24,7 +45,8 @@ data class MorphConfig(
     val skinCacheHours: Long = 24,
     val requestTimeoutSeconds: Int = 60,
     val boundingBox: BoundingBoxConfig = BoundingBoxConfig(),
-    val healthScale: HealthScaleConfig = HealthScaleConfig(),
+    val healthMode: HealthMode = HealthMode.NONE,
+    val mobAggro: MobAggroConfig = MobAggroConfig(),
     /** 每秒触发环境音效的概率系数，1.0 约等于原版生物的频率，0 关闭。 */
     val ambientSoundFrequency: Double = 1.0,
     val restoreOnJoin: Boolean = true,
@@ -54,9 +76,11 @@ data class MorphConfig(
                 minScale = config.getDouble("bounding-box.min-scale", 0.25).coerceIn(0.0625, 16.0),
                 maxScale = config.getDouble("bounding-box.max-scale", 2.0).coerceIn(0.0625, 16.0),
             ),
-            healthScale = HealthScaleConfig(
-                enabled = config.getBoolean("health-scale.enabled", true),
-                maxHealth = config.getDouble("health-scale.max-health", 60.0).coerceIn(1.0, 1024.0),
+            healthMode = HealthMode.parse(config.getString("health-scale.mode")),
+            mobAggro = MobAggroConfig(
+                enabled = config.getBoolean("mob-aggro.enabled", true),
+                provokeSeconds = config.getInt("mob-aggro.provoke-seconds", 30).coerceIn(0, 3600),
+                bruteIgnoresDisguise = config.getBoolean("mob-aggro.piglin-brute-ignore-disguise", true),
             ),
             ambientSoundFrequency = config.getDouble("ambient-sound-frequency", 1.0).coerceIn(0.0, 6.0),
             restoreOnJoin = config.getBoolean("restore-on-join", true),

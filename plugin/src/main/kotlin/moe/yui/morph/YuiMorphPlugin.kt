@@ -18,6 +18,7 @@ import moe.yui.morph.effect.EntityTraits
 import moe.yui.morph.gui.DisguiseMenu
 import moe.yui.morph.i18n.Messages
 import moe.yui.morph.migrate.FeatherMorphImporter
+import moe.yui.morph.listener.AggroListener
 import moe.yui.morph.listener.PlayerListener
 import moe.yui.morph.protocol.Protocol
 import moe.yui.morph.render.DisguiseRenderer
@@ -84,9 +85,11 @@ class YuiMorphPlugin : JavaPlugin() {
 
         client = ClientBridge(this).also { it.register() }
         requests = RequestManager(this)
-        server.asyncScheduler.runAtFixedRate(this, { requests.purgeExpired(); sounds.purgeExpired() }, 5, 5, TimeUnit.SECONDS)
+        val aggro = AggroListener(this)
+        server.asyncScheduler.runAtFixedRate(this, { requests.purgeExpired(); sounds.purgeExpired(); aggro.purgeExpired() }, 5, 5, TimeUnit.SECONDS)
 
         server.pluginManager.registerEvents(PlayerListener(this), this)
+        server.pluginManager.registerEvents(aggro, this)
         server.pluginManager.registerEvents(DisguiseMenu.MenuListener(), this)
         server.pluginManager.registerEvents(sounds, this)
         server.pluginManager.registerEvents(actions, this)

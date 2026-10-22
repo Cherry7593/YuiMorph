@@ -43,8 +43,7 @@ class DisguiseEffects(private val plugin: YuiMorphPlugin, private val traits: En
         } else null
         setModifier(player, Attribute.SCALE, SCALE_KEY, scale?.let { it - 1.0 }, AttributeModifier.Operation.MULTIPLY_SCALAR_1)
 
-        val health = if (t != null && config.healthScale.enabled) EffectMath.maxHealth(t, config.healthScale.maxHealth) else null
-        setMaxHealth(player, health)
+        setMaxHealth(player, t)
 
         startSounds(player, session)
     }
@@ -92,11 +91,16 @@ class DisguiseEffects(private val plugin: YuiMorphPlugin, private val traits: En
         if (amount != null && amount != 0.0) instance.addTransientModifier(AttributeModifier(key, amount, op))
     }
 
-    /** 修改最大生命值，并按比例换算当前血量（避免变成小鸡后血量溢出、变回来后只剩几颗心）。 */
-    private fun setMaxHealth(player: Player, target: Double?) {
+    /**
+     * 按 `health-scale.mode` 修改最大生命值（[traits] 为 null 表示恢复本体），
+     * 并按比例换算当前血量（避免变成小鸡后血量溢出、变回来后只剩几颗心）。
+     */
+    private fun setMaxHealth(player: Player, traits: Traits?) {
         val instance = player.getAttribute(Attribute.MAX_HEALTH) ?: return
         val oldMax = instance.value
         instance.removeModifier(HEALTH_KEY)
+        // 去掉本插件修饰器后的值就是玩家本来的最大生命值（包含其他插件的修改）
+        val target = traits?.let { EffectMath.maxHealth(it, config.healthMode, instance.value) }
         if (target != null) {
             val amount = target - instance.value
             if (amount != 0.0) instance.addTransientModifier(AttributeModifier(HEALTH_KEY, amount, AttributeModifier.Operation.ADD_NUMBER))

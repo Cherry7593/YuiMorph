@@ -1,5 +1,6 @@
 package moe.yui.morph.effect
 
+import moe.yui.morph.config.HealthMode
 import java.io.InputStream
 
 /** 原版尺寸和默认最大生命值。 */
@@ -45,8 +46,16 @@ object EffectMath {
     /** 尺寸由 size 属性决定的生物（表里是 size=1 时的尺寸）。 */
     private val CUBE_MOBS = setOf("minecraft:slime", "minecraft:magma_cube")
 
-    /** 伪装后的最大生命值：生物的默认值，不超过 [cap]。 */
-    fun maxHealth(traits: Traits, cap: Double): Double = traits.maxHealth.coerceIn(1.0, cap)
+    /**
+     * 伪装后的最大生命值；null 表示不修改。
+     * [playerMax] 是玩家未伪装时的最大生命值，[HealthMode.CAPPED] 下不会超过它。
+     */
+    fun maxHealth(traits: Traits, mode: HealthMode, playerMax: Double): Double? = when (mode) {
+        HealthMode.NONE -> null
+        HealthMode.CAPPED -> traits.maxHealth.coerceIn(1.0, playerMax.coerceAtLeast(1.0))
+        // 1024 是原版 max_health 属性的上限
+        HealthMode.UNLIMITED -> traits.maxHealth.coerceIn(1.0, 1024.0)
+    }
 
     /** 最大生命值变化时按比例换算当前血量，至少保留半颗心避免直接死亡。 */
     fun rescaleHealth(health: Double, oldMax: Double, newMax: Double): Double {

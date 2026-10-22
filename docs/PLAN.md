@@ -72,3 +72,5 @@ python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版
 | M4 ✅ | 碰撞箱、血量缩放、环境音效、离线恢复、强制伪装 | A5 A6 A7 |
 | M5 ✅ | 伪装动作 | A4 |
 | M6 ✅ | 协议与 Fabric Mod：自身伪装渲染、选择界面、快捷键、HUD | G2 |
+| M7 ✅ | 第一人称伪装手臂（设计见 [`FIRST_PERSON_ARM.md`](FIRST_PERSON_ARM.md)） | G2 |
+| M8 🚧 | 怪物仇恨（设计见 [`MOB_AGGRO.md`](MOB_AGGRO.md)）：代码和单元测试完成，待实机验证 | A8 |

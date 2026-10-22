@@ -1,7 +1,9 @@
 package moe.yui.morph.effect
 
+import moe.yui.morph.config.HealthMode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class EffectMathTest {
@@ -41,9 +43,23 @@ class EffectMathTest {
     }
 
     @Test
-    fun `血量上限和比例换算`() {
-        assertEquals(60.0, EffectMath.maxHealth(traits["minecraft:warden"]!!, 60.0))
-        assertEquals(4.0, EffectMath.maxHealth(traits["minecraft:chicken"]!!, 60.0))
+    fun `血量模式`() {
+        val warden = traits["minecraft:warden"]!!
+        val chicken = traits["minecraft:chicken"]!!
+        // none：不修改
+        assertNull(EffectMath.maxHealth(warden, HealthMode.NONE, 20.0))
+        assertNull(EffectMath.maxHealth(chicken, HealthMode.NONE, 20.0))
+        // capped：可以变少，不能超过玩家本来的上限
+        assertEquals(4.0, EffectMath.maxHealth(chicken, HealthMode.CAPPED, 20.0))
+        assertEquals(20.0, EffectMath.maxHealth(warden, HealthMode.CAPPED, 20.0))
+        assertEquals(40.0, EffectMath.maxHealth(warden, HealthMode.CAPPED, 40.0))
+        // unlimited：完全跟随生物
+        assertEquals(500.0, EffectMath.maxHealth(warden, HealthMode.UNLIMITED, 20.0))
+        assertEquals(4.0, EffectMath.maxHealth(chicken, HealthMode.UNLIMITED, 20.0))
+    }
+
+    @Test
+    fun `血量比例换算`() {
         // 满血 20 → 变成小鸡后满血 4 → 变回来满血 20
         assertEquals(4.0, EffectMath.rescaleHealth(20.0, 20.0, 4.0))
         assertEquals(20.0, EffectMath.rescaleHealth(4.0, 4.0, 20.0))
