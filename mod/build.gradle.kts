@@ -45,6 +45,12 @@ tasks.processResources {
     filesMatching("fabric.mod.json") { expand(props) }
 }
 
+// 第一人称手臂画廊只截部分生物：./gradlew :mod:runClientGameTest -ParmGallery=pig,zombie
+tasks.matching { it.name == "runClientGameTest" }.configureEach {
+    val gallery = providers.gradleProperty("armGallery")
+    if (gallery.isPresent) (this as JavaExec).systemProperty("yuimorph.armGallery", gallery.get())
+}
+
 // 测试源码需要访问客户端代码
 sourceSets.named("gametest") {
     compileClasspath += sourceSets["client"].output

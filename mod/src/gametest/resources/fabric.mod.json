@@ -9,6 +9,10 @@
       {
         "adapter": "kotlin",
         "value": "moe.yui.morph.gametest.PreviewRenderGameTest"
+      },
+      {
+        "adapter": "kotlin",
+        "value": "moe.yui.morph.gametest.FirstPersonArmGameTest"
       }
     ]
   },

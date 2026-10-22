@@ -1,6 +1,8 @@
 package moe.yui.morph.client
 
 import com.mojang.blaze3d.platform.InputConstants
+import moe.yui.morph.client.arm.FirstPersonArm
+import moe.yui.morph.client.storage.ClientSettings
 import moe.yui.morph.client.storage.ClientStorage
 import moe.yui.morph.client.ui.ActionWheelScreen
 import moe.yui.morph.client.ui.MorphScreen
@@ -36,6 +38,7 @@ object YuiMorphClient : ClientModInitializer {
     private lateinit var unmorph: KeyMapping
 
     override fun onInitializeClient() {
+        ClientSettings.load()
         registerNetworking()
         registerKeys()
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("yuimorph", "status"), StatusHud)
@@ -64,6 +67,7 @@ object YuiMorphClient : ClientModInitializer {
         }
         ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
             MorphClientState.reset()
+            FirstPersonArm.clear()
             PreviewController.clear()
             PreviewEntities.clear()
             SkinCache.clear()

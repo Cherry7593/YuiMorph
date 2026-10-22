@@ -7,8 +7,12 @@
     "ClientMannequinAccessor",
     "ClientPacketListenerMixin",
     "EntityRenderDispatcherMixin",
+    "EquipmentLayerRendererMixin",
+    "FirstPersonHandsMixin",
+    "LevelExtractorMixin",
     "LevelMixin",
     "MannequinAccessor",
+    "PlayerRenderStateMixin",
     "ProxyGuardEntityMixin",
     "ProxyGuardLivingEntityMixin"
   ],
