@@ -2,14 +2,28 @@
 """向本地测试服发送 RCON 命令。密码和端口从测试服 server.properties 读取。
 
 用法: scripts/rcon.py "list" ["yuimorph reload" ...]
-环境变量 YUIMORPH_SERVER_DIR 可覆盖测试服目录。
+测试服目录：环境变量 YUIMORPH_SERVER_DIR，未设置时读取 ~/.gradle/gradle.properties 的 yuimorph.testServerDir。
 """
 import os
 import socket
 import struct
 import sys
 
-SERVER_DIR = os.environ.get("YUIMORPH_SERVER_DIR", "/Users/yui/Workspace/servers/mc-server")
+def find_server_dir():
+    env = os.environ.get("YUIMORPH_SERVER_DIR")
+    if env:
+        return env
+    path = os.path.expanduser("~/.gradle/gradle.properties")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                k, _, v = line.strip().partition("=")
+                if k.strip() == "yuimorph.testServerDir" and v.strip():
+                    return v.strip()
+    sys.exit("未找到测试服目录：请设置 YUIMORPH_SERVER_DIR 或 ~/.gradle/gradle.properties 中的 yuimorph.testServerDir")
+
+
+SERVER_DIR = find_server_dir()
 
 
 def load_props():

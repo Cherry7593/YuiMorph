@@ -7,3 +7,5 @@ run/
 .kotlin/
 .DS_Store
 dist/
+coscli_output/
+.pi/

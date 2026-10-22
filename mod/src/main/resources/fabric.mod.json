@@ -6,6 +6,11 @@
   "description": "YuiMorph 客户端增强：自身伪装渲染、伪装选择界面、快捷键与状态 HUD。",
   "authors": ["yui"],
   "license": "MIT",
+  "contact": {
+    "homepage": "https://github.com/Cherry7593/YuiMorph",
+    "sources": "https://github.com/Cherry7593/YuiMorph",
+    "issues": "https://github.com/Cherry7593/YuiMorph/issues"
+  },
   "environment": "client",
   "entrypoints": {
     "client": [

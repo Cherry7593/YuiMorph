@@ -7,6 +7,13 @@
 
 需求范围见 [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md)，设计与里程碑见 [`docs/PLAN.md`](docs/PLAN.md)。
 
+## 下载与安装
+
+在 [Releases](https://github.com/Cherry7593/YuiMorph/releases/latest) 下载最新版本：
+
+- **服务端**：`YuiMorph-<版本>.jar` 放入 `plugins/`，同时安装 [PacketEvents](https://modrinth.com/plugin/packetevents) 2.14.0+
+- **客户端（可选）**：`yuimorph-fabric-<版本>.jar` 放入 `mods/`，前置 [Fabric API](https://modrinth.com/mod/fabric-api) 和 [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin)
+
 ## 功能
 
 | 类别 | 内容 |
@@ -15,8 +22,8 @@
 | 属性 | `/ym property`：幼体、颜色、剪毛、大小、变种、村民类型/职业、自定义名字、换皮肤 |
 | 动作 | `/ym action`：坐下、睡觉、跳舞、怒吼、缩成球、爬行等 |
 | 获取 | 击杀解锁、玩家间交换请求（`/ym request`） |
-| 体验 | 碰撞箱随体型缩放、血量缩放、环境 / 受击 / 死亡音效、下线恢复、强制伪装 |
-| 界面 | 无 Mod：箱子 GUI（`/ym`）；装了 Mod：实时模型的选择界面（N，属性所见即所得、预设、最近使用）、动作轮盘（按住 G）、解除（↓）、HUD、F5 看到自己 |
+| 体验 | 碰撞箱随体型缩放、血量缩放、怪物仇恨、环境 / 受击 / 死亡音效、下线恢复、强制伪装 |
+| 界面 | 无 Mod：箱子 GUI（`/ym`）；装了 Mod：实时模型的选择界面（N，属性所见即所得、预设、最近使用）、动作轮盘（按住 G）、解除（↓）、HUD、F5 看到自己、第一人称显示伪装的手臂 / 前腿（`config/yuimorph/settings.json` 可关闭） |
 | 管理 | `/ym admin status / query / queryall / lookup / grant / revoke / force / unmorph / ban / unban / bans / import / reload` |
 
 ## 从 FeatherMorph 迁移
@@ -53,7 +60,7 @@ ym admin import feathermorph confirm   # 执行导入
 
 ```bash
 ./gradlew build                 # 全部模块 + 单元测试
-./gradlew :plugin:deploy        # 构建插件并拷贝到本地测试服（gradle.properties 中的 yuimorph.testServerDir）
+./gradlew :plugin:deploy        # 构建插件并拷贝到本地测试服（在 ~/.gradle/gradle.properties 设置 yuimorph.testServerDir）
 ```
 
 产物：
@@ -69,3 +76,7 @@ ym admin import feathermorph confirm   # 执行导入
 python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版本>.jar
 ./gradlew :plugin:test
 ```
+
+## 许可证
+
+[MIT](LICENSE)

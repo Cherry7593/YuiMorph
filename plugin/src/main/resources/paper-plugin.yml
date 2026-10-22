@@ -3,6 +3,7 @@ version: '${version}'
 main: moe.yui.morph.YuiMorphPlugin
 description: 伪装成生物或玩家
 authors: [ yui ]
+website: https://github.com/Cherry7593/YuiMorph
 api-version: '26.3'
 folia-supported: true
 
