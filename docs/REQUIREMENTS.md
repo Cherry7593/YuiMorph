@@ -7,8 +7,8 @@
 
 | 项 | 选择 |
 |---|---|
-| 服务端 | **Shiroha 26.3**（Folia 下游分支，[ShirohaDevelop/Shiroha](http://repo.zakozako0721.lol:38080/ShirohaDevelop/Shiroha) `dev/26.3`） |
-| 编译 API | `dev.folia:folia-api:26.3.build.3-alpha`（repo.papermc.io 已发布；不依赖 Shiroha 专有 API，`paper-plugin.yml` 声明 `folia-supported: true`） |
+| 服务端 | **Folia 26.3**（已测试）或 Paper 26.3（未完整测试） |
+| 编译 API | `dev.folia:folia-api:26.3.build.3-alpha`（repo.papermc.io 已发布；`paper-plugin.yml` 声明 `folia-supported: true`） |
 | 测试服 | 本地测试服，目录由 `yuimorph.testServerDir` 指定（换内核用 `start.sh` 的 `-jar` + `restart-folia.sh`） |
 | 客户端 | Fabric 26.3 Mod（**可选增强**，不装也能完整游玩） |
 | 语言 / 构建 | Kotlin + Gradle（Kotlin DSL） |

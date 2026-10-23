@@ -5,7 +5,7 @@
 ```
 YuiMorph/
 ├── protocol/   纯 Kotlin，客户端↔服务端协议定义与编解码（不依赖 MC）
-├── plugin/     Folia/Shiroha 26.3 插件（Paper plugin，PacketEvents 渲染）
+├── plugin/     Folia 26.3 插件（Paper plugin，PacketEvents 渲染）
 └── mod/        Fabric 26.3 客户端 Mod（可选增强）
 ```
 
@@ -41,7 +41,7 @@ YuiMorph/
 **升级 MC 版本时必须重新生成**：
 
 ```bash
-python3 scripts/gen-entity-layouts.py <测试服>/versions/<版本>/shiroha-<版本>.jar
+python3 scripts/gen-entity-layouts.py <服务端 jar>
 ./gradlew :plugin:test   # 包含“任何属性都不会发出越界索引”的全量检查
 ```
 

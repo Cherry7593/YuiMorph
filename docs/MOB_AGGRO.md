@@ -1,7 +1,7 @@
 # 怪物仇恨设计
 
 > 参考：FeatherMorph `events/CommonEventProcessor#onEntityTarget`、`utilities/EntityTypeUtils`、`RevealingHandler`
-> 原版索敌关系用 `shiroha-26.3.jar` 的字节码核对过（各怪物的 `NearestAttackableTargetGoal` 目标类）。
+> 原版索敌关系用 Folia 26.3 服务端 jar 的字节码核对过（各怪物的 `NearestAttackableTargetGoal` 目标类）。
 
 ## 目标
 

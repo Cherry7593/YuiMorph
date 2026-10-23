@@ -1,4 +1,4 @@
-# 由 scripts/gen-entity-layouts.py 从 shiroha-26.3.jar 生成，请勿手改
+# 由 scripts/gen-entity-layouts.py 从 Folia 26.3 服务端 jar 生成，请勿手改
 # 实体ID<TAB>宽<TAB>高<TAB>默认最大生命值
 minecraft:allay	0.35	0.6	20
 minecraft:armadillo	0.7	0.65	12
